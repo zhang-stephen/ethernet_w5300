@@ -1,0 +1,15 @@
+**/_hdl_checker
+/.qsys_edit
+/board
+/db
+**/greybox_tmp
+/incremental_db
+/output_files
+/simulation
+/timing
+*.qpf
+*.qsf
+*.qws
+*.rpt
+*.bak
+*.log
