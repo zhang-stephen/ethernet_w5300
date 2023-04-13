@@ -6,17 +6,23 @@ module top(
 	// system ports
 	input clk0,   // 50MHz XTAL
 	input rst_n,  // Reset
-	
-	// w5300 ports
-	// without BRDY support
+
+	// w5300 ports， without BRDY pins
 	inout tri [15:0] data,
 	input int_n,
 	output [9:0] addr,
 	output cs_n,
 	output rd_n,
 	output we_n,
-	output reset_n,
-	output rw_n   // for flip-flop controls
+	output wrst_n,
+	output rw_n,   // for flip-flop controls
+
+	// UART for debugging
+	input uart_rxd,
+	output reg uart_txd,
+
+	// LEDs for status
+	output [3:0] leds
 );
 
 wire wclk0;
@@ -24,6 +30,13 @@ wire wclk0;
 pll wpll(
 	.inclk0(clk0),
 	.c0(wclk0)
+);
+
+led_status led_status_0(
+	.rst_n(rst_n),
+	.clk(clk0),
+	.err_n(),
+	.leds(leds)
 );
 
 _w5300_parallel_if_rw rw();
