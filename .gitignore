@@ -7,6 +7,7 @@
 /output_files
 /simulation
 /timing
+/.vscode
 *.qpf
 *.qsf
 *.qws
