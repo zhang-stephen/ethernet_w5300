@@ -15,7 +15,7 @@
 
 # Quartus Prime: Generate Tcl File for Project
 # File: ethernet_w5300.tcl
-# Generated on: Fri Apr 14 03:30:03 2023
+# Generated on: Sat Apr 15 23:51:51 2023
 
 # Load Quartus Prime Tcl Project package
 package require ::quartus::project
@@ -170,8 +170,9 @@ if {$make_assignments} {
 	set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to data[15]
 	set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to data[14]
 	set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to data
-	set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 	set_location_assignment PIN_B3 -to wrst_n
+	set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to wrst_n
+	set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 
 	# Commit assignments
 	export_assignments
