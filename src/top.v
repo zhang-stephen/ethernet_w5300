@@ -39,7 +39,19 @@ module top(
                    .leds(leds)
                );
 
-    _w5300_parallel_if_rw rw();
+
+    w5300_parallel_if w5300_parallel_if_0(
+                          .i_rst_n(rst_n),
+                          .clk(wclk0),
+                          .data(data),
+                          .addr(addr),
+                          .o_rst_n(wrst_n),
+                          .cs_n(cs_n),
+                          .rd_n(rd_n),
+                          .we_n(we_n),
+                          .rw_n(rw_n)
+
+                      );
 
 endmodule
 

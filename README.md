@@ -68,4 +68,5 @@ The project(`.qpf`, `.qsf` and other project files) would be restored in the roo
 
 ### References
 
-*to be done*
+1. [W5300 datasheet v1.3.4](https://www.wiznet.io/wp-content/uploads/wiznethome/Chip/W5300/Documents/W5300_DS_V134E.pdf)
+2. [RFC 768: UDP Datagram Protocol](https://www.rfc-editor.org/rfc/rfc768)
