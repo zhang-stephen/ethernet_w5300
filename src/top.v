@@ -25,7 +25,46 @@ module top(
         output [3:0] leds
     );
 
+    localparam UDP_BUFFER_ADDR_WIDTH = 12;
+    localparam UDP_BUFFER_DATA_WIDTH = 12;
+    localparam S_W5300_INIT = 4'd0, S_W5300_IDLE = 4'd1, S_W5300_BUSY = 4'd1;
+
+    reg [3:0] state_c;
+    reg [3:0] state_n;
+
     wire wclk0;
+    wire w5300_busy_n;
+    wire tx_req;
+    wire rx_req;
+    wire [2:0] err_code;
+    wire [UDP_BUFFER_ADDR_WIDTH - 1:0] w5300_tx_addr;
+    wire [UDP_BUFFER_DATA_WIDTH - 1:0] w5300_tx_data;
+    wire [UDP_BUFFER_ADDR_WIDTH - 1:0] w5300_conf_rom_addr;
+    wire [UDP_BUFFER_DATA_WIDTH - 1:0] w5300_conf_rom_data;
+    wire [UDP_BUFFER_ADDR_WIDTH - 1:0] udp_tx_buffer_addr;
+    wire [UDP_BUFFER_DATA_WIDTH - 1:0] udp_tx_buffer_data;
+    wire [UDP_BUFFER_ADDR_WIDTH - 1:0] udp_rx_buffer_addr;
+    wire [UDP_BUFFER_DATA_WIDTH - 1:0] udp_rx_buffer_data;
+
+    assign w5300_tx_addr = (state_c != S_W5300_INIT) ? udp_tx_buffer_addr : w5300_conf_rom_addr;
+    assign w5300_tx_data = (state_c != S_W5300_INIT) ? udp_tx_buffer_data : w5300_conf_rom_data;
+
+    always @(posedge wclk0 or negedge rst_n)
+        if (!rst_n)
+            state_c <= S_W5300_INIT;
+        else
+            state_c <= state_n;
+
+    always @*
+        if (!rst_n)
+            state_n <= S_W5300_INIT;
+        else case(state_c)
+            S_W5300_INIT: state_n <= (w5300_busy_n == 1'b1) ? S_W5300_IDLE : S_W5300_INIT;
+            S_W5300_IDLE: state_n <= (tx_req == 1'b1) ? S_W5300_BUSY : S_W5300_IDLE;
+            S_W5300_BUSY: state_n <= (w5300_busy_n == 1'b1) ? S_W5300_IDLE : S_W5300_BUSY;
+        endcase
+
+    // TODO: 3-stage FSM, the sequential output to be finished!
 
     pll wpll(
             .inclk0(clk0),
@@ -35,24 +74,43 @@ module top(
     led_status led_status_0(
                    .rst_n(rst_n),
                    .clk(clk0),
-                   .err_n(),
+                   .err_n(err_code),
                    .leds(leds)
                );
 
 
-    w5300_parallel_if w5300_parallel_if_0(
-                          .rst_n(rst_n),
-                          .clk(wclk0),
-                          .data(data),
-                          .addr(addr),
-                          .cs_n(cs_n),
-                          .rd_n(rd_n),
-                          .we_n(we_n),
-                          .rw_n(rw_n)
-                      );
+    w5300_entry#
+        (
+            .CLK_FREQ(100),
+            .TX_BUFFER_ADDR_WIDTH(UDP_BUFFER_ADDR_WIDTH),
+            .RX_BUFFER_ADDR_WIDTH(UDP_BUFFER_ADDR_WIDTH)
+        )
+        w5300_entry_inst_0(
+            .rst_n(rst_n),
+            .clk(wclk0),
+            .tx_req(tx_req),
+            .tx_data(w5300_tx_data),
+            .tx_buffer_addr(w5300_tx_addr),
+            .rx_data(udp_rx_buffer_data),
+            .rx_buffer_addr(udp_rx_buffer_addr),
+            .rx_req(),
+            .err_code(err_code),
+            .busy_n(w5300_busy_n),
+            .data(data),
+            .addr(addr),
+            .wrst_n(wrst_n),
+            .cs_n(cs_n),
+            .rd_n(rd_n),
+            .we_n(we_n),
+            .rw_n(rw_n),
+            .int_n(int_n)
+        );
 
-    assign wrst_n = rst_n;
-
+    w5300_conf_rom w5300_conf_rom_inst(
+                       .address(w5300_conf_rom_addr),
+                       .clock(wclk0),
+                       .q(w5300_conf_rom_data)
+                   );
 endmodule
 
 // EOF
