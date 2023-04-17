@@ -9,7 +9,7 @@ module led_status(
         output reg [4:0] leds
     );
 
-    localparam MAX_COUNTER = 32'd25_000_000 - 1;
+    localparam MAX_COUNTER = 32'd15_000_000 - 1; // blink period: 300ms for 50MHz
 
     reg [31:0] _counter;
 
@@ -18,23 +18,23 @@ module led_status(
             if (!rst_n)
                 begin
                     _counter <= 32'd0;
-                    leds[0] <= 1'b0;
+                    leds[3] <= 1'b0;
                 end
             else if (_counter < MAX_COUNTER)
                 _counter <= _counter + 32'd1;
             else
                 begin
                     _counter <= 32'd0;
-                    leds[0] <= !leds[0];
+                    leds[3] <= !leds[3];
                 end
         end
 
     always @(posedge clk or negedge rst_n)
         begin
             if (!rst_n)
-                leds[3:1] <= 4'd0;
+                leds[2:0] <= 3'b000;
             else
-                leds[3:1] <= err_n;
+                leds[2:0] <= err_n;
         end
 
 endmodule

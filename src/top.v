@@ -18,8 +18,8 @@ module top(
         output rw_n,   // for flip-flop controls
 
         // UART for debugging
-        input uart_rxd,
-        output reg uart_txd,
+        input  uart_rxd,
+        output uart_txd,
 
         // LEDs for status
         output [3:0] leds
@@ -41,17 +41,17 @@ module top(
 
 
     w5300_parallel_if w5300_parallel_if_0(
-                          .i_rst_n(rst_n),
+                          .rst_n(rst_n),
                           .clk(wclk0),
                           .data(data),
                           .addr(addr),
-                          .o_rst_n(wrst_n),
                           .cs_n(cs_n),
                           .rd_n(rd_n),
                           .we_n(we_n),
                           .rw_n(rw_n)
-
                       );
+
+    assign wrst_n = rst_n;
 
 endmodule
 

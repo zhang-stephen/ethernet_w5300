@@ -15,7 +15,7 @@ module _w5300_parallel_if_rw
          input [10:0] c_addr,
          input [15:0] c_idata,
          output reg [15:0] c_odata,
-         output reg rw_ready,		// pull down for r/w operation is ongoing
+         output reg rw_ready,       // pull down for r/w operation is ongoing
 
          // physical ports
          inout tri [15:0] data,
@@ -36,9 +36,7 @@ module _w5300_parallel_if_rw
     reg [3 :0] _cnt;
 
     always @*
-        begin
-            _addr = c_addr;
-        end
+        _addr = c_addr;
 
     assign data = _data;
 
