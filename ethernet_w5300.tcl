@@ -15,7 +15,7 @@
 
 # Quartus Prime: Generate Tcl File for Project
 # File: ethernet_w5300.tcl
-# Generated on: Sat Apr 15 23:51:51 2023
+# Generated on: Tue Apr 18 15:22:52 2023
 
 # Load Quartus Prime Tcl Project package
 package require ::quartus::project
@@ -70,13 +70,9 @@ if {$make_assignments} {
 	set_global_assignment -name EDA_BOARD_DESIGN_BOUNDARY_SCAN_TOOL "BSDL (Boundary Scan)"
 	set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_boundary_scan
 	set_global_assignment -name EDA_OUTPUT_DATA_FORMAT BSDL -section_id eda_board_design_boundary_scan
-	set_global_assignment -name VERILOG_FILE src/top.v
-	set_global_assignment -name QIP_FILE ip/pll.qip
-	set_global_assignment -name VERILOG_FILE src/w5300/_rw.v
 	set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 	set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 	set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-	set_global_assignment -name VERILOG_FILE testbench/w5300/_rw.v
 	set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 	set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 	set_global_assignment -name EDA_MAP_ILLEGAL_CHARACTERS OFF -section_id eda_simulation
@@ -87,6 +83,14 @@ if {$make_assignments} {
 	set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_parallel_if_rw
 	set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_parallel_if_rw -section_id tb__w5300_parallel_if_rw
 	set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/_rw.v -section_id tb__w5300_parallel_if_rw
+	set_global_assignment -name QIP_FILE ip/rom/w5300_conf_rom.qip
+	set_global_assignment -name QIP_FILE ip/ram/udp_buffer.qip
+	set_global_assignment -name QIP_FILE ip/pll/pll.qip
+	set_global_assignment -name VERILOG_FILE src/w5300/udp.v
+	set_global_assignment -name VERILOG_FILE src/w5300/entry.v
+	set_global_assignment -name VERILOG_FILE src/top.v
+	set_global_assignment -name VERILOG_FILE src/w5300/_rw.v
+	set_global_assignment -name VERILOG_FILE testbench/w5300/_rw.v
 	set_global_assignment -name VERILOG_FILE src/w5300/if.v
 	set_global_assignment -name VERILOG_FILE src/led/led.v
 	set_location_assignment PIN_B10 -to addr[9]
