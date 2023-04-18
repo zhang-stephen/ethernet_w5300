@@ -86,7 +86,7 @@ module w5300_parallel_if#
         (
             .rst_n(rst_n),
             .clk(clk),
-            .c_addr(_addr),
+            .c_addr(uaddr),
             .c_idata(u_wr_data),
             .c_odata(u_rd_data),
             .rw_ready(op_status),

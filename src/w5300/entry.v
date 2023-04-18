@@ -58,7 +58,7 @@ module w5300_entry#
             .tx_data(tx_data),
             .tx_buffer_addr(tx_buffer_addr),
             .rx_data(rx_data),
-            .rx_buffer_addr(rx_addr_addr),
+            .rx_buffer_addr(rx_buffer_addr),
             .rx_req(rx_req),
             .err_code(err_code),
             .busy_n(busy_n),
