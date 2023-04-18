@@ -1,3 +1,4 @@
 ip/pll filter=lfs diff=lfs merge=lfs -text
 ip/rom/w5300_conf_rom.qip filter=lfs diff=lfs merge=lfs -text
 ip/rom/w5300_conf_rom.v filter=lfs diff=lfs merge=lfs -text
+ip/ram filter=lfs diff=lfs merge=lfs -text
