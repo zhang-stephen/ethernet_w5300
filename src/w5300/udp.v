@@ -50,46 +50,10 @@ module w5300_udp_conf_comm#
     localparam S_POWER_UP = 6'd0; // for W5300 power-up reset, wait for the first pull-up of op_status
     localparam S_HAND_SHAKE = 6'd1;
     localparam S_COMMON_INIT = 6'd2;
+    localparam S_S0_TX = 6'd31, S_S0_RX = 6'd32;
     localparam S_IDLE = 6'd46, S_ERROR = 6'd47;
     localparam S_S0_INIT = 6'd48, S_S0_INIT_CPLT = 6'd49; // wait for S0_SSR_SOCK_UDP
     // STATE 50-63 reserved for Socket 1 - Socket 7
-
-
-    /**
-     * Address & Mask of some W5300 registers, which might be used in communications
-     * All register is little-endian, MR[] should be 1.
-     */
-    // Interrupt Register
-    localparam IR = 10'h002;
-    localparam IR_IPCF = 16'h8000;
-    localparam IR_DPUR = 16'h4000;
-    localparam IR_FMTU = 16'h1000;
-    localparam IR_S0_MASK = 16'h0001;
-
-    // IDentification Register
-    localparam IDR = 10'h0FE;
-    localparam IDR_ID = 16'h5300; // big-endian, read before W5300 configured
-
-    // Socket 0 Command Register(only for UDP mode)
-    localparam S0_CR = 10'h202;
-    localparam Sx_CR_OPEN = 16'h0100;
-    localparam Sx_CR_CLOSE = 16'h1000;
-    localparam Sx_CR_SEND = 16'h2000;
-    localparam Sx_CR_RECV = 16'h4000;
-
-    // Socket 0 Interrupt Register
-    localparam S0_IR = 10'h206;
-    localparam Sx_IR_SENDOK = 16'h1000;
-    localparam Sx_IR_RECV = 16'h0400;
-
-    // Socket 0 Socket Status Register
-    localparam S0_SSR = 10'h208;
-    localparam Sx_SSR_SOCK_CLOSED = 16'h0000;
-    localparam Sx_SSR_SOCK_UDP = 16'd2200;
-
-    // Socket 0 Destination IP Regsiter
-
-    // Socket 0 Destination PORT Register
 
     // ERROR code
     // this module will be marked as S_ERROR and will not recover from this state unless it is reseted.
@@ -100,12 +64,12 @@ module w5300_udp_conf_comm#
     localparam ERR_W5300_FOUND = 3'd6; // debug only
     localparam ERR_W5300_NOT_FOUND = 3'd7;
 
-    // Network common configuration(see w5300_conf_regs.mif)
+    localparam LUT_COMMON_MAX = 6'h0e;
 
     // internal registers
+    reg [3 :0] _wait_cnt;
     reg [5 :0] _state_n;    // next
     reg [5 :0] _state_c;    // current
-    reg [7 :0] _socket_int;
     reg [15:0] _rd_reg;
     reg [31:0] _tx_cnt;
     reg [31:0] _rx_cnt;
@@ -121,11 +85,61 @@ module w5300_udp_conf_comm#
     // bit 10: 1 - read, 0 - write
     // bit [9:0]: true address of W5300 registers
     reg [11:0] _caddr;
-    reg [3 :0] _wait_cnt;
+
+    reg [5 :0] _lut_index;
+    reg [5 :0] _common_reg_lut_index;
+    reg [5 :0] _s0_reg_lut_index;
+    reg [5 :0] _s0_udp_tx_reg_lut_index;
+    reg [5 :0] _s0_udp_rx_reg_lut_index;
+    reg [26:0] _lut_data;
+    wire [26:0] _common_reg_lut_data;
+    wire [26:0] _s0_reg_lut_data;
+    wire [26:0] _s0_udp_tx_reg_lut_data;
+    wire [26:0] _s0_udp_rx_reg_lut_data;
 
     // assign
     assign err_code = _status[2:0];
 
+    always @(posedge clk or negedge rst_n)
+        begin
+            if (!rst_n)
+                begin
+                    _common_reg_lut_index <= 6'd0;
+                    _s0_reg_lut_index <= 6'd0;
+                    _s0_udp_tx_reg_lut_index <= 6'd0;
+                    _s0_udp_rx_reg_lut_index <= 6'd0;
+                    _lut_data <= 27'd0;
+                end
+            else
+                case (_state_c)
+                    S_COMMON_INIT:
+                        begin
+                            _common_reg_lut_index <= _lut_index;
+                            _lut_data <= _common_reg_lut_data;
+                        end
+                    S_S0_INIT:
+                        begin
+                            _s0_reg_lut_index <= _lut_index;
+                            _lut_data <= _s0_reg_lut_data;
+                        end
+                    S_S0_TX:
+                        begin
+                            _s0_udp_tx_reg_lut_index <= _lut_index;
+                            _lut_data <= _s0_udp_tx_reg_lut_data;
+                        end
+                    S_S0_RX:
+                        begin
+                            _s0_udp_rx_reg_lut_index <= _lut_index;
+                            _lut_data <= _s0_udp_rx_reg_lut_data;
+                        end
+                    default:
+                        begin
+                            _lut_data <= 27'h7_ffff_ffff_ffff;
+                        end
+                endcase
+        end
+
+    // FSM
     always @(posedge clk or negedge rst_n)
         if (!rst_n)
             _state_c <= S_POWER_UP;
@@ -157,18 +171,24 @@ module w5300_udp_conf_comm#
         if (!rst_n)
             begin
                 busy_n <= 1'b0;
+                _lut_index <= 6'd0;
             end
         else
             case (_state_c)
                 S_HAND_SHAKE:
                     begin
-                        caddr <= {1'b0, 1'b1, IDR};
+                        caddr <= {1'b0, 1'b1, 10'h0fe};
                         _rd_reg <= rd_data;
                     end
                 S_COMMON_INIT:
                     begin
-                        caddr <= {1'b0, 1'b0, 10'd0};
-                        wr_data <= 16'h0002;
+                        if (_lut_index >= LUT_COMMON_MAX)
+                            begin
+                                caddr <= {1'b0, _lut_data[26:16]};
+                                wr_data <= _lut_data[15:0];
+                            end
+                        else
+                            _lut_index <= _lut_index + 1'b1;
                     end
                 S_S0_INIT:
                     begin
@@ -193,7 +213,7 @@ module w5300_udp_conf_comm#
         else
             case (_state_c)
                 S_HAND_SHAKE:
-                    if (_rd_reg == IDR_ID)
+                    if (_rd_reg == 16'h5300)
                         begin
                             _status[15] <= 1'b1;
                             _status[2:0] <= ERR_W5300_FOUND;
@@ -201,6 +221,38 @@ module w5300_udp_conf_comm#
                     else
                         _status[2:0] <= ERR_W5300_NOT_FOUND;
             endcase
+
+    _w5300_common_regs_conf_lut _w5300_common_regs_conf_lut_inst(
+                                    .index(_common_reg_lut_index),
+                                    .data(_common_reg_lut_data)
+                                );
+
+    _w5300_socket_n_regs_conf_lut#
+        (
+            .N(0)
+        )
+        _w5300_socket_n_regs_conf_lut_inst(
+            .index(_s0_reg_lut_index),
+            .data(_s0_reg_lut_data)
+        );
+
+    _w5300_socket_n_regs_udp_tx_lut#
+        (
+            .N(0)
+        )
+        _w5300_socket_n_regs_udp_tx_lut_inst(
+            .index(_s0_udp_tx_reg_lut_index),
+            .data(_s0_udp_tx_reg_lut_data)
+        );
+
+    _w5300_socket_n_regs_udp_rx_lut#
+        (
+            .N(0)
+        )
+        _w5300_socket_n_regs_udp_rx_lut_inst(
+            .index(_s0_udp_rx_reg_lut_index),
+            .data(_s0_udp_rx_reg_lut_data)
+        );
 
 endmodule
 

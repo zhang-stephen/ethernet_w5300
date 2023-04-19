@@ -8,6 +8,22 @@ This driver is planned to implement UDP communication in a LAN, with Intel Cyclo
 
 Why is Verilog HDL chosen, not VHDL or System Verilog? Well, the VHDL is too old to be applied in newer design. And the System Verilog is preferred but I use Verilog HDL and this design as my initial HDL development learning now.
 
+### Usage
+
+This is a pure Quartus Prime project for Intel Cyclone IV series, but I think the key part, driver of W5300 is free to be ported to other platform.
+
+The Quartus Prime used for this design is Quartus Prime Lite 22.1, and it is expected to be compatible for newer version of Quartus Prime Lite.
+
+#### Restore project from TCL scripts
+
+Open the "Tcl Console" from "View > Utility Window" menu in Quartus, and run following command:
+
+```tcl
+source <absolute_path>/ethernet_w5300.tcl
+```
+
+The project(`.qpf`, `.qsf` and other project files) would be restored in the root folder of this repo. Then it could be opened in Quartus.
+
 ### Hardware
 
 There are many hardware suite used, including UART, LEDs, keys, and W5300 itself. All pin allocation could be found in [here](./ethernet_w5300.tcl), and it's used to restore whole Quartus Prime project, see [here](#Usage)
@@ -50,21 +66,36 @@ N1  | M2
 
 The Signal Tap Logic Analyzer is enabled for W5300 interface debugging. It could be removed safely for saving resources of FPGA.
 
-### Usage
+### HDL Designs
 
-This is a pure Quartus Prime project for Intel Cyclone IV series, but I think the key part, driver of W5300 is free to be ported to other platform.
+#### W5300 LUTs
 
-The Quartus Prime used for this design is Quartus Prime Lite 22.1, and it is expected to be compatible for newer version of Quartus Prime Lite.
+The interface of LUTs is familiar. They have a 6-bit input as operation index, and a 27-bit output data, which is composed by following:
 
-#### Restore project from TCL scripts
+- bit 26: 1 for reading and 0 for writing,
+- bit 25-16: the address of w5300 register,
+- bit 15-0: the data to be written or 0xFFFF for reading.
 
-Open the "Tcl Console" from "View > Utility Window" menu in Quartus, and run following command:
+And an decleration of a LUT interface looks like this:
 
-```tcl
-source <absolute_path>/ethernet_w5300.tcl
+```verilog
+module _w5300_common_regs_conf_lut
+(
+    input [5:0] index,
+    output[26:0] data
+);
+
+    // some content...
+
+endmodule
 ```
 
-The project(`.qpf`, `.qsf` and other project files) would be restored in the root folder of this repo. Then it could be opened in Quartus.
+There are some LUTs for most operations of Socket 0 of W5300 in UDP mode, see [LUTs](./src/w5300/luts/):
+
+- configuration for common registers, e.g. MR, IMR, and registers of network configuration,
+- configuration for Socket N,
+- Tx/Rx operations,
+- interrupt status reading & clearing.
 
 ### References
 
