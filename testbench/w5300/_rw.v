@@ -18,37 +18,37 @@ reg[10:0] c_addr = 11'd0;
 assign rst_n = rst;
 
 initial begin
-	#0 begin
-	end
-	#10 rst <= 1'b0;
-	#20 rst <= 1'b1;
-	#945 $finish;
+    #0 begin
+    end
+    #10 rst <= 1'b0;
+    #20 rst <= 1'b1;
+    #945 $finish;
 end
 
 always #5 clk = ~clk;
 
 always @(posedge ready) begin
-	c_addr = c_addr + 2'd2;
-	c_addr[10] = ~c_addr[10];
-	c_idata = c_idata + 1'b1;
+    c_addr = c_addr + 2'd2;
+    c_addr[10] = ~c_addr[10];
+    c_idata = c_idata + 1'b1;
 end
 
 _w5300_parallel_if_rw _tb__w5300_parallel_if_rw(
-	// physical ports to w5300
-	.rst_n(rst_n),
-	.clk(clk),
-	.data(io_data),
-	.addr(io_addr),
-	.cs_n(cs_n),
-	.rd_n(rd_n),
-	.we_n(we_n),
-	.rw_n(rw_n),
-	
-	// logic control ports
-	.c_addr(c_addr),
-	.c_idata(c_idata),
-	.c_odata(c_odata),
-	.rw_ready(ready)		// pull down for r/w operation is ongoing
+    // physical ports to w5300
+    .rst_n(rst_n),
+    .clk(clk),
+    .data(io_data),
+    .addr(io_addr),
+    .cs_n(cs_n),
+    .rd_n(rd_n),
+    .we_n(we_n),
+    .rw_n(rw_n),
+
+    // logic control ports
+    .c_addr(c_addr),
+    .c_idata(c_idata),
+    .c_odata(c_odata),
+    .rw_ready(ready)		// pull down for r/w operation is ongoing
 );
 
 endmodule
