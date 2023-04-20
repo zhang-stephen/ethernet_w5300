@@ -82,7 +82,7 @@ And an decleration of a LUT interface looks like this:
 module _w5300_common_regs_conf_lut
 (
     input [5:0] index,
-    output[26:0] data
+    output reg [26:0] data
 );
 
     // some content...
