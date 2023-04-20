@@ -15,7 +15,7 @@
 
 # Quartus Prime: Generate Tcl File for Project
 # File: ethernet_w5300.tcl
-# Generated on: Thu Apr 20 02:21:56 2023
+# Generated on: Thu Apr 20 23:26:01 2023
 
 # Load Quartus Prime Tcl Project package
 package require ::quartus::project
@@ -43,7 +43,6 @@ if {[is_project_open]} {
 if {$make_assignments} {
     set_global_assignment -name FAMILY "Cyclone IV E"
     set_global_assignment -name DEVICE EP4CE10F17C8
-    set_global_assignment -name TOP_LEVEL_ENTITY top
     set_global_assignment -name ORIGINAL_QUARTUS_VERSION 22.1STD.0
     set_global_assignment -name PROJECT_CREATION_TIME_DATE "01:40:46  MARCH 28, 2023"
     set_global_assignment -name LAST_QUARTUS_VERSION "22.1std.0 Lite Edition"
@@ -86,7 +85,11 @@ if {$make_assignments} {
     set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
     set_global_assignment -name SMART_RECOMPILE ON
     set_global_assignment -name NUM_PARALLEL_PROCESSORS 12
-    set_global_assignment -name QIP_FILE ip/rom/w5300_conf_rom.qip
+    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/_rw.v -section_id tb__w5300_parallel_if_rw
+    set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_common_regs_conf_lut -section_id eda_simulation
+    set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_common_regs_conf_lut
+    set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_common_regs_conf_lut -section_id tb__w5300_common_regs_conf_lut
+    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/luts/_common_reg.v -section_id tb__w5300_common_regs_conf_lut
     set_global_assignment -name QIP_FILE ip/ram/udp_buffer.qip
     set_global_assignment -name QIP_FILE ip/pll/pll.qip
     set_global_assignment -name VERILOG_FILE src/w5300/udp.v
@@ -99,11 +102,6 @@ if {$make_assignments} {
     set_global_assignment -name VERILOG_FILE src/w5300/luts/_socket_reg.v
     set_global_assignment -name VERILOG_FILE testbench/w5300/_rw.v
     set_global_assignment -name VERILOG_FILE testbench/w5300/luts/_common_reg.v
-    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/_rw.v -section_id tb__w5300_parallel_if_rw
-    set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_common_regs_conf_lut -section_id eda_simulation
-    set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_common_regs_conf_lut
-    set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_common_regs_conf_lut -section_id tb__w5300_common_regs_conf_lut
-    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/luts/_common_reg.v -section_id tb__w5300_common_regs_conf_lut
     set_location_assignment PIN_B10 -to addr[9]
     set_location_assignment PIN_C6 -to data[8]
     set_location_assignment PIN_E10 -to leds[0]
