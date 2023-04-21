@@ -1,2 +1,0 @@
-ip/pll filter=lfs diff=lfs merge=lfs -text
-ip/ram filter=lfs diff=lfs merge=lfs -text
