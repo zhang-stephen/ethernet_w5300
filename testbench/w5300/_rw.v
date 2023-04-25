@@ -11,29 +11,17 @@ reg rst = 1;
 wire rst_n;
 wire cs_n, rd_n, we_n, rw_n, ready;
 wire[9:0] io_addr;
-wire[15:0] io_data, c_odata;
-reg[15:0] c_idata = 16'd0;
-reg[10:0] c_addr = 11'd0;
+wire[15:0] io_data, rd_data;
+reg[15:0] wr_data = 16'd0;
+reg[15:0] io_data_r = 16'd0;
+reg[10:0] caddr = 11'd0;
 
 assign rst_n = rst;
+assign io_data = caddr[10] ? io_data_r : {16{1'bz}};
 
-initial begin
-    #0 begin
-    end
-    #10 rst <= 1'b0;
-    #20 rst <= 1'b1;
-    #945 $finish;
-end
+_w5300_parallel_if_rw#(.CLK_FREQ(100)) tb__w5300_parallel_if_rw_inst
 
-always #5 clk = ~clk;
-
-always @(posedge ready) begin
-    c_addr = c_addr + 2'd2;
-    c_addr[10] = ~c_addr[10];
-    c_idata = c_idata + 1'b1;
-end
-
-_w5300_parallel_if_rw _tb__w5300_parallel_if_rw(
+(
     // physical ports to w5300
     .rst_n(rst_n),
     .clk(clk),
@@ -45,11 +33,31 @@ _w5300_parallel_if_rw _tb__w5300_parallel_if_rw(
     .rw_n(rw_n),
 
     // logic control ports
-    .c_addr(c_addr),
-    .c_idata(c_idata),
-    .c_odata(c_odata),
-    .rw_ready(ready)		// pull down for r/w operation is ongoing
+    .caddr(caddr),
+    .wr_data(wr_data),
+    .rd_data(rd_data),
+    .rw_ready(ready)        // pull down for r/w operation is ongoing
 );
+
+initial begin
+    #0 caddr[11] = 1'b1;
+    #10 rst <= 1'b0;
+    #20 rst <= 1'b1;
+    #1200 $finish;
+end
+
+always #5 clk = ~clk;
+
+always @(posedge ready) begin
+    caddr <= caddr + 2'd2;
+    caddr[10] <= ~caddr[10];
+    wr_data <= wr_data + 1'b1;
+    io_data_r <= {$random} % 65536;
+    
+//    if (caddr[10] == 1'b1)
+//        tb__w5300_parallel_if_rw_inst._data <= {$random} % 65536;
+end
+
 
 endmodule
 
