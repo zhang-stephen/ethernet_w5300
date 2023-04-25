@@ -50,11 +50,27 @@ module w5300_udp_conf_comm#
      */
     localparam S_POWER_UP = 6'd0; // for W5300 power-up reset, wait for the first pull-up of op_status
     localparam S_HAND_SHAKE = 6'd1;
-    localparam S_COMMON_INIT = 6'd2;
+    localparam S_COMMON_INIT = 6'd2, S_WAIT_S0_UDP = 6'd5;
     localparam S_S0_TX = 6'd31, S_S0_RX = 6'd32;
     localparam S_IDLE = 6'd46, S_ERROR = 6'd47;
     localparam S_S0_INIT = 6'd48, S_S0_INIT_CPLT = 6'd49; // wait for S0_SSR_SOCK_UDP
     // STATE 50-63 reserved for Socket 1 - Socket 7
+
+    /**
+     * Task states
+     */
+    localparam TS_REG_INIT_IDLE = 2'd0;
+    localparam TS_REG_INIT_WRITING = 2'd1;
+    localparam TS_REG_INIT_WRITING_2 = 2'd3;
+    localparam TS_REG_INIT_CPLT = 2'd2;
+
+    localparam TS_TX_IDLE = 4'd0;
+    localparam TS_TX_RD_FREE_SIZE_0 = 4'd1, TS_TX_RD_FREE_SIZE_1 = 4'd2;
+    localparam TS_TX_WR_DST_IP_0 = 4'd3, TS_WR_DST_IP_1 = 4'd4, TS_WR_DST_PORT = 4'd5;
+    localparam TS_TX_WR_USER_DATA = 4'd6;
+    localparam TS_TX_WR_SEND_SIZE_0 = 4'd7, TS_TX_WR_SEND_SIZE_1 = 4'd8;
+    localparam TS_TX_WR_CMD_SEND = 4'd9;
+    localparam TS_TX_CPLT = 4'd10;
 
     // ERROR code
     // this module will be marked as S_ERROR and will not recover from this state unless it is reseted.
@@ -73,16 +89,19 @@ module w5300_udp_conf_comm#
     localparam S0_REGS_UDP_RX_LUT_STEPS = 6'h03;
 
     // internal registers
+    reg [3 :0] _task_state;
+    reg [3 :0] _s0_init_state;
     reg [5 :0] _state_n;    // next
     reg [5 :0] _state_c;    // current
     reg [5 :0] _state_i;    // jump to after interrupt handling
     reg [31:0] _tx_cnt;
     reg [31:0] _rx_cnt;
     // internal operation status register
-    // bit 15: 1 - W5300 found, 0 - W5300 not found
+    // bit 15: 1 - task ongoing, 0 - task finished
     // bit 14: 1 - interrupt occurred, 0 - no interrupt occurred
-    // bit 13: 1 - operation timeout, 0 - operation not timeout
-    // bit [12:3]: reserved
+    // bit 13: 1 - common initialized
+    // bit [12:4]: reserved
+    // bit  3: 1 - s0 initialized
     // bit [2 :0]: err_code
     reg [15:0] _status;
 
@@ -100,32 +119,6 @@ module w5300_udp_conf_comm#
     always @*
         rx_data <= rd_data;
 
-    always @(posedge clk or negedge rst_n)
-        begin
-            if (!rst_n)
-                begin
-                    wr_data <= 16'd0;
-                    caddr <= 12'd0;
-                end
-            else
-                case (_state_c)
-                    S_COMMON_INIT:
-                        {caddr, wr_data} <= {ADDR_S_VALID, _common_reg_lut_data};
-                    S_HAND_SHAKE:
-                        caddr <= {ADDR_S_VALID, ADDR_OP_RD, 10'h0fe};
-                    S_S0_INIT:
-                        {caddr, wr_data} <= {ADDR_S_VALID, _s0_reg_lut_data};
-                    S_S0_TX:
-                        {caddr, wr_data} <= {ADDR_S_VALID, _s0_udp_tx_reg_lut_data};
-                    S_S0_RX:
-                        {caddr, wr_data} <= {ADDR_S_VALID, _s0_udp_rx_reg_lut_data};
-                    S_IDLE:
-                        caddr[11] <= ADDR_S_INVALID;
-                    default:
-                        {caddr, wr_data} <= 28'hf_ffff_ffff_ffff;
-                endcase
-        end
-
     // FSM
     always @(posedge clk or negedge rst_n)
         if (!rst_n)
@@ -139,16 +132,13 @@ module w5300_udp_conf_comm#
         else
             case(_state_c)
                 S_POWER_UP:
-                    _state_n <= (op_status == 1'b1) ? S_HAND_SHAKE : S_POWER_UP;
-                S_HAND_SHAKE:
-                    if (op_status == 1'b1)
-                        _state_n <= (rx_data == 16'h5300) ? S_COMMON_INIT : S_ERROR;
-                    else
-                        _state_n <= S_HAND_SHAKE;
+                    _state_n <= (op_status == 1'b1) ? S_COMMON_INIT : S_POWER_UP;
                 S_COMMON_INIT:
-                    _state_n <= (_lut_index > COMMON_REGS_LUT_STEPS) ? S_S0_INIT : S_COMMON_INIT;
+                    _state_n <= (op_status && _status[13]) ? S_S0_INIT : S_COMMON_INIT;
                 S_S0_INIT:
-                    _state_n <= (_lut_index > S0_REGS_CONF_LUT_STEPS) ? S_IDLE : S_S0_INIT;
+                    _state_n <= (op_status && _status[3]) ? S_WAIT_S0_UDP : S_S0_INIT;
+                S_WAIT_S0_UDP:
+                    _state_n <= (op_status && rx_data[7:0] == 8'h22) ? S_IDLE : S_WAIT_S0_UDP;
                 S_IDLE:
                     if (!tx_req)
                         _state_n <= S_S0_TX;
@@ -165,23 +155,34 @@ module w5300_udp_conf_comm#
     always @(posedge clk or negedge rst_n)
         if (!rst_n)
             begin
-                busy_n <= 1'b0;
                 _lut_index <= 6'd0;
+                _status <= 16'd0;
+                _task_state <= 4'd0;
+                _s0_init_state <= 4'd0;
+                busy_n <= 1'b0;
+                wr_data <= 16'd0;
+                caddr <= {ADDR_S_INVALID, ADDR_OP_RD, 10'd0};
             end
         else
             case (_state_c)
                 S_COMMON_INIT:
-                    if (_lut_index > COMMON_REGS_LUT_STEPS)
-                        _lut_index <= 6'd0;
-                    else if (op_status == 1'b1)
-                        _lut_index <= _lut_index + 1'b1;
+                    begin
+                        
+                        w5300_common_regs_init;
+                    end
                 S_S0_INIT:
-                    if (_lut_index > S0_REGS_CONF_LUT_STEPS)
-                        _lut_index <= 6'd0;
-                    else if (op_status == 1'b1)
-                        _lut_index <= _lut_index + 1'b1;
+                    begin
+//                        {caddr, wr_data} <= {ADDR_S_VALID, _s0_reg_lut_data};
+                        w5300_socket0_init;
+                    end
+                S_WAIT_S0_UDP:
+                    caddr <= {ADDR_S_VALID, ADDR_OP_RD, 10'h208};
                 S_IDLE:
-                    ;
+                    begin
+                        _lut_index <= 6'd0;
+                        caddr[11] <= ADDR_S_INVALID;
+                        busy_n <= 1'b1;
+                    end
                 S_ERROR:
                     _status[2:0] <= 3'b111;
             endcase
@@ -235,6 +236,69 @@ module w5300_udp_conf_comm#
             .index(_lut_index),
             .data(_int_wr_lut_data)
         );
+
+    task w5300_common_regs_init;
+        case (_task_state)
+            TS_REG_INIT_IDLE:
+                begin
+                    _lut_index <= 6'd0;
+                    _task_state <= TS_REG_INIT_WRITING_2;
+                end
+
+            TS_REG_INIT_WRITING:
+                begin
+                    _lut_index <= _lut_index + 1'b1;
+                    _task_state <= (_lut_index > COMMON_REGS_LUT_STEPS) ? TS_REG_INIT_CPLT: TS_REG_INIT_WRITING_2;
+                end
+                
+            TS_REG_INIT_WRITING_2: begin
+                {caddr, wr_data} <= {ADDR_S_VALID, _common_reg_lut_data};
+                _task_state <= op_status ? TS_REG_INIT_WRITING : TS_REG_INIT_WRITING_2;
+                end
+
+            TS_REG_INIT_CPLT: begin
+                _status[13] <= 1'b1;
+                end
+        endcase
+    endtask
+    
+    task w5300_socket0_init;
+        case (_s0_init_state)
+            TS_REG_INIT_IDLE:
+                begin
+                    _lut_index <= 6'd0;
+                    _s0_init_state <= TS_REG_INIT_WRITING_2;
+                end
+
+            TS_REG_INIT_WRITING:
+                begin
+                    _lut_index <= _lut_index + 1'b1;
+                    _s0_init_state <= (_lut_index > S0_REGS_CONF_LUT_STEPS) ? TS_REG_INIT_CPLT: TS_REG_INIT_WRITING_2;
+                end
+            
+            TS_REG_INIT_WRITING_2: begin
+                {caddr, wr_data} <= {ADDR_S_VALID, _s0_reg_lut_data};
+                _s0_init_state <= op_status ? TS_REG_INIT_WRITING : TS_REG_INIT_WRITING_2;
+                end
+
+            TS_REG_INIT_CPLT: begin
+                _status[3] <= 1'b1;
+                end
+        endcase
+    endtask
+
+//    task w5300_irq_handle;
+////        case (_task_state)
+////            
+////        endcase
+//    endtask
+//
+//    task w5300_udp_tx;
+//    
+//    endtask
+//
+//    task w5300_udp_rx;
+//    endtask
 
 endmodule
 

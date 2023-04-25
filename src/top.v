@@ -34,6 +34,7 @@ module top(
     reg [3:0] state_n;
 
     wire wclk0;
+    wire stp_clk;
     wire w5300_busy_n;
     wire rx_req;
     wire [2:0] err_code;
@@ -84,7 +85,8 @@ module top(
 
     pll wpll(
             .inclk0(clk0),
-            .c0(wclk0)
+            .c0(wclk0),
+            .c1(stp_clk)
         );
 
     led_status led_status_0(
