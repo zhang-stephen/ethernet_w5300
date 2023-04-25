@@ -12,7 +12,9 @@ Why is Verilog HDL chosen, not VHDL or System Verilog? Well, the VHDL is too old
 
 This is a pure Quartus Prime project for Intel Cyclone IV series, but I think the key part, driver of W5300 is free to be ported to other platform.
 
-The Quartus Prime used for this design is Quartus Prime Lite 22.1, and it is expected to be compatible for newer version of Quartus Prime Lite.
+The Quartus Prime used for this design is Quartus Prime Lite 17.1(or 22.1 before commit e0e7dc2ba), and it is expected to be compatible for newer version of Quartus Prime Lite.
+
+*Quartus Prime was downgraded to version 17.1 due to Signal Tap Logic Analyzer crashes.*
 
 #### Restore project from TCL scripts
 
