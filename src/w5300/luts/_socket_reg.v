@@ -56,7 +56,7 @@ module _w5300_socket_n_regs_conf_lut#
     always @*
         case (index)
             6'h00:
-                data <= {ADDR_OP_WR, Sn_MR, Sn_MR_MULTI | Sn_MR_ND_MC | Sn_MR_P_UDP};
+                data <= {ADDR_OP_WR, Sn_MR, Sn_MR_P_UDP};
             6'h01:
                 data <= {ADDR_OP_WR, Sn_IMR, Sn_IMR_SENDOK | Sn_IMR_RECV};
             6'h02:

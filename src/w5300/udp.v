@@ -40,6 +40,7 @@ module w5300_udp_conf_comm#
     localparam CLK_FREQ_REF = 100;
     localparam ADDR_OP_RD = 1'b1, ADDR_OP_WR = 1'b0;
     localparam ADDR_S_INVALID = 1'b1, ADDR_S_VALID = 1'b0;
+    localparam TX_WAIT_CNT = 32'd30_000_000 - 1; // Tx period: 150ms for 100MHz
 
     // External buffer addrs
     localparam MAX_TX_BUFFER_ADDR = 2 ** TX_BUFFER_ADDR_WIDTH - 1;
@@ -52,6 +53,7 @@ module w5300_udp_conf_comm#
     localparam S_HAND_SHAKE = 6'd1;
     localparam S_COMMON_INIT = 6'd2, S_WAIT_S0_UDP = 6'd5;
     localparam S_S0_TX = 6'd31, S_S0_RX = 6'd32;
+    localparam S_S0_TX_WAIT = 6'd33;
     localparam S_IDLE = 6'd46, S_ERROR = 6'd47;
     localparam S_S0_INIT = 6'd48, S_S0_INIT_CPLT = 6'd49; // wait for S0_SSR_SOCK_UDP
     // STATE 50-63 reserved for Socket 1 - Socket 7
@@ -91,11 +93,13 @@ module w5300_udp_conf_comm#
     // internal registers
     reg [3 :0] _task_state;
     reg [3 :0] _s0_init_state;
+    reg [3 :0] _s0_tx_state;
     reg [5 :0] _state_n;    // next
     reg [5 :0] _state_c;    // current
     reg [5 :0] _state_i;    // jump to after interrupt handling
     reg [31:0] _tx_cnt;
     reg [31:0] _rx_cnt;
+    reg [31:0] _wait_cnt;
     // internal operation status register
     // bit 15: 1 - task ongoing, 0 - task finished
     // bit 14: 1 - interrupt occurred, 0 - no interrupt occurred
@@ -104,12 +108,14 @@ module w5300_udp_conf_comm#
     // bit  3: 1 - s0 initialized
     // bit [2 :0]: err_code
     reg [15:0] _status;
+    reg [15:0] _status_2;
 
     reg [5 :0] _lut_index;
     wire [26:0] _common_reg_lut_data;
     wire [26:0] _s0_reg_lut_data;
     wire [26:0] _s0_udp_tx_reg_lut_data;
     wire [26:0] _s0_udp_rx_reg_lut_data;
+    wire [26:0] _s0_tx_packet_lut_data;
     wire [26:0] _int_rd_lut_data;
     wire [26:0] _int_wr_lut_data;
 
@@ -140,12 +146,11 @@ module w5300_udp_conf_comm#
                 S_WAIT_S0_UDP:
                     _state_n <= (op_status && rx_data[7:0] == 8'h22) ? S_IDLE : S_WAIT_S0_UDP;
                 S_IDLE:
-                    if (!tx_req)
-                        _state_n <= S_S0_TX;
-                    else if (!int_n)
-                        ;
-                    else
-                        _state_n <= S_IDLE;
+                    _state_n <= S_S0_TX;
+                S_S0_TX:
+                    _state_n <= (op_status && _status_2[0]) ? S_S0_TX_WAIT : S_S0_TX;
+                S_S0_TX_WAIT:
+                    _state_n <= (_wait_cnt >= TX_WAIT_CNT) ? S_IDLE : S_S0_TX_WAIT;
                 S_ERROR:
                     _state_n <= S_ERROR;
                 default:
@@ -172,7 +177,6 @@ module w5300_udp_conf_comm#
                     end
                 S_S0_INIT:
                     begin
-//                        {caddr, wr_data} <= {ADDR_S_VALID, _s0_reg_lut_data};
                         w5300_socket0_init;
                     end
                 S_WAIT_S0_UDP:
@@ -182,7 +186,14 @@ module w5300_udp_conf_comm#
                         _lut_index <= 6'd0;
                         caddr[11] <= ADDR_S_INVALID;
                         busy_n <= 1'b1;
+                        _wait_cnt <= 32'd0;
+                        _s0_tx_state <= 4'd0;
+                        _status_2[0] <= 1'b0;
                     end
+                S_S0_TX:
+                    w5300_udp_tx;
+                S_S0_TX_WAIT:
+                    _wait_cnt <= _wait_cnt + 1'b1;
                 S_ERROR:
                     _status[2:0] <= 3'b111;
             endcase
@@ -236,6 +247,12 @@ module w5300_udp_conf_comm#
             .index(_lut_index),
             .data(_int_wr_lut_data)
         );
+        
+    _w5300_exp_udp_tx_lut#(.N(0))
+    _w5300_exp_udp_tx_lut_index(
+        .index(_lut_index),
+        .data(_s0_tx_packet_lut_data)
+    );
 
     task w5300_common_regs_init;
         case (_task_state)
@@ -288,14 +305,34 @@ module w5300_udp_conf_comm#
     endtask
 
 //    task w5300_irq_handle;
-////        case (_task_state)
-////            
-////        endcase
+//        case (_task_state)
+//            
+//        endcase
 //    endtask
 //
-//    task w5300_udp_tx;
-//    
-//    endtask
+    task w5300_udp_tx;
+        case (_s0_tx_state)
+            4'h0:
+                begin
+                    _lut_index <= 6'd0;
+                    _s0_tx_state <= 4'h1;
+                    
+                end
+            4'h1:
+                begin
+                    _lut_index <= _lut_index + 1'b1;
+                    _s0_tx_state <= (_lut_index > 6'h10) ? 4'h3 : 4'h2;
+                end
+            4'h2:
+                begin
+                    {caddr, wr_data} <= {ADDR_S_VALID, _s0_tx_packet_lut_data};
+                    _s0_tx_state <= op_status ? 4'h1 : 4'h2;
+                end
+            4'h3:
+                _status_2[0] <= 1'b1;
+            default: ;
+        endcase
+    endtask
 //
 //    task w5300_udp_rx;
 //    endtask

@@ -14,7 +14,7 @@
 
 # Quartus Prime: Generate Tcl File for Project
 # File: ethernet_w5300.tcl
-# Generated on: Tue Apr 25 21:32:18 2023
+# Generated on: Mon May 29 22:09:41 2023
 
 # Load Quartus Prime Tcl Project package
 package require ::quartus::project
@@ -56,7 +56,6 @@ if {$make_assignments} {
     set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim (Verilog)"
     set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
     set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
-    set_global_assignment -name ENABLE_SIGNALTAP OFF
     set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
     set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
     set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
@@ -66,11 +65,6 @@ if {$make_assignments} {
     set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_parallel_if_rw -section_id eda_simulation
     set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_parallel_if_rw
     set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_parallel_if_rw -section_id tb__w5300_parallel_if_rw
-    set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_common_regs_conf_lut -section_id eda_simulation
-    set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_common_regs_conf_lut
-    set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_common_regs_conf_lut -section_id tb__w5300_common_regs_conf_lut
-    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/_rw.v -section_id tb__w5300_parallel_if_rw
-    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/luts/_common_reg.v -section_id tb__w5300_common_regs_conf_lut
     set_global_assignment -name VERILOG_FILE testbench/w5300/luts/_interrupt_reg.v
     set_global_assignment -name VERILOG_FILE testbench/w5300/luts/_common_reg.v
     set_global_assignment -name VERILOG_FILE testbench/w5300/_rw.v
@@ -84,6 +78,12 @@ if {$make_assignments} {
     set_global_assignment -name VERILOG_FILE src/w5300/_rw.v
     set_global_assignment -name VERILOG_FILE src/top.v
     set_global_assignment -name QIP_FILE ip/pll/pll.qip
+    set_global_assignment -name VERILOG_FILE src/w5300/luts/tx_packet.v
+    set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_common_regs_conf_lut -section_id eda_simulation
+    set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_common_regs_conf_lut
+    set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_common_regs_conf_lut -section_id tb__w5300_common_regs_conf_lut
+    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/_rw.v -section_id tb__w5300_parallel_if_rw
+    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/luts/_common_reg.v -section_id tb__w5300_common_regs_conf_lut
     set_location_assignment PIN_B10 -to addr[9]
     set_location_assignment PIN_A9 -to addr[8]
     set_location_assignment PIN_E10 -to leds[0]
