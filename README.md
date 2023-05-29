@@ -56,14 +56,6 @@ The LEDs will light up when the IOs were put high level.
 
 *to be done: error list*
 
-#### UART
-
-The UART is converted to USB interface by CP2102. And the driver clock of UART is 50MHz, default baud rate is 115200.
-
-TXD | RXD
---- | ---
-N1  | M2
-
 #### Others
 
 The Signal Tap Logic Analyzer is enabled for W5300 interface debugging. It could be removed safely for saving resources of FPGA.
