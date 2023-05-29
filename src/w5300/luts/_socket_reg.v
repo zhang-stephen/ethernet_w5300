@@ -60,7 +60,7 @@ module _w5300_socket_n_regs_conf_lut#
             6'h01:
                 data <= {ADDR_OP_WR, Sn_IMR, Sn_IMR_SENDOK | Sn_IMR_RECV};
             6'h02:
-                data <= {ADDR_OP_WR, Sn_PORTR, 16'd7000};
+                data <= {ADDR_OP_WR, Sn_PORTR, 16'h1b58};
             6'h03:
                 data <= {ADDR_OP_WR, Sn_MSSR, Sn_MSSR_UDP_DEFAULT};
             6'h04:

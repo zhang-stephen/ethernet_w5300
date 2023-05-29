@@ -19,11 +19,11 @@ module w5300_udp_conf_comm#
         input [15:0] dest_port,
         input [31:0] tx_data_size,
         input [15:0] tx_data,
-        output reg [TX_BUFFER_ADDR_WIDTH:0] tx_buffer_addr,
+        output reg [TX_BUFFER_ADDR_WIDTH - 1:0] tx_buffer_addr,
 
         // rx ports
         output reg [15:0] rx_data,
-        output reg [RX_BUFFER_ADDR_WIDTH:0] rx_buffer_addr,
+        output reg [RX_BUFFER_ADDR_WIDTH - 1:0] rx_buffer_addr,
         output reg rx_req,
 
         // control ports
@@ -43,7 +43,6 @@ module w5300_udp_conf_comm#
     localparam CLK_FREQ_REF = 100;
     localparam ADDR_OP_RD = 1'b1, ADDR_OP_WR = 1'b0;
     localparam ADDR_S_INVALID = 1'b1, ADDR_S_VALID = 1'b0;
-    localparam TX_WAIT_CNT = 32'd30_000_000 - 1; // Tx period: 150ms for 100MHz
 
     // External buffer addrs
     localparam MAX_TX_BUFFER_ADDR = 2 ** TX_BUFFER_ADDR_WIDTH - 1;
@@ -100,9 +99,9 @@ module w5300_udp_conf_comm#
     reg [5 :0] _state_n;    // next
     reg [5 :0] _state_c;    // current
     reg [5 :0] _state_i;    // jump to after interrupt handling
+    reg [31:0] _tx_free_size;
     reg [31:0] _tx_cnt;
     reg [31:0] _rx_cnt;
-    reg [31:0] _wait_cnt;
     // internal operation status register
     // bit 15: 1 - task ongoing, 0 - task finished
     // bit 14: 1 - interrupt occurred, 0 - no interrupt occurred
@@ -149,11 +148,9 @@ module w5300_udp_conf_comm#
                 S_WAIT_S0_UDP:
                     _state_n <= (op_status && rx_data[7:0] == 8'h22) ? S_IDLE : S_WAIT_S0_UDP;
                 S_IDLE:
-                    _state_n <= S_S0_TX;
+                    _state_n <= ~tx_req ? S_S0_TX : S_IDLE;
                 S_S0_TX:
-                    _state_n <= (op_status && _status_2[0]) ? S_S0_TX_WAIT : S_S0_TX;
-                S_S0_TX_WAIT:
-                    _state_n <= (_wait_cnt >= TX_WAIT_CNT) ? S_IDLE : S_S0_TX_WAIT;
+                    _state_n <= (op_status && _status_2[0]) ? S_IDLE : S_S0_TX;
                 S_ERROR:
                     _state_n <= S_ERROR;
                 default:
@@ -189,14 +186,11 @@ module w5300_udp_conf_comm#
                         _lut_index <= 6'd0;
                         caddr[11] <= ADDR_S_INVALID;
                         busy_n <= 1'b1;
-                        _wait_cnt <= 32'd0;
                         _s0_tx_state <= 4'd0;
                         _status_2[0] <= 1'b0;
                     end
                 S_S0_TX:
                     w5300_udp_tx;
-                S_S0_TX_WAIT:
-                    _wait_cnt <= _wait_cnt + 1'b1;
                 S_ERROR:
                     _status[2:0] <= 3'b111;
             endcase
@@ -312,9 +306,21 @@ module w5300_udp_conf_comm#
         case (_s0_tx_state)
             4'h0:
                 begin
-                    _s0_tx_state <= 4'h1;
-                    tx_buffer_addr <= 0;
+                    _s0_tx_state <= 4'ha;
+                    tx_buffer_addr <= 8'b0;
                 end
+            4'ha: // TX_FSR0
+                begin
+                    {caddr, _tx_free_size[31:16]} <= {ADDR_S_VALID, ADDR_OP_RD, 10'h224, rd_data};
+                    _s0_tx_state <= op_status ? 4'hb : 4'ha;
+                end
+            4'hb: // TX_FSR2
+                begin
+                    {caddr, _tx_free_size[15: 0]} <= {ADDR_S_VALID, ADDR_OP_RD, 10'h226, rd_data};
+                    _s0_tx_state <= op_status ? 4'hc : 4'hb;
+                end
+            4'hc:
+                _s0_tx_state <= (_tx_free_size < tx_data_size) ? 4'ha : 4'h1;
             4'h1: // DIPR0
                 begin
                     {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h214, dest_ip[31:16]};
@@ -338,7 +344,8 @@ module w5300_udp_conf_comm#
             4'h7: // buff_addr++
                 begin
                     tx_buffer_addr <= tx_buffer_addr + 1'b1;
-                    _s0_tx_state <= (tx_buffer_addr + 1'b1 >= tx_data_size >> 1) ? 4'h4 : 4'h6;
+                    // FIXME: tx_buffer_addr might overflow!
+                    _s0_tx_state <= (tx_buffer_addr + 1'b1 == tx_data_size >> 1) ? 4'h4 : 4'h6;
                 end
             4'h4: // WRSR0
                 begin

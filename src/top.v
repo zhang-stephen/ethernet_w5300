@@ -22,6 +22,7 @@ module top(
     );
 
     localparam BUFFER_WIDTH = 8'h08;
+    localparam MAX_COUNTER = 32'd25_000_000 - 1; // 150ms for 100MHz
     
     wire wclk0;
     wire stp_clk;
@@ -29,6 +30,29 @@ module top(
     wire [2:0] err_code;
     wire [BUFFER_WIDTH - 1:0] tx_buffer_addr;
     wire [15:0] tx_buffer_data;
+    
+    reg tx_req = 1'b0;
+    reg [31:0] _counter;
+
+    always @(posedge wclk0 or negedge rst_n)
+        begin
+            if (!rst_n)
+                begin
+                    _counter <= 32'd0;
+                    tx_req <= 1'b1;
+                end
+            else 
+                if (_counter < MAX_COUNTER)
+                    begin
+                        _counter <= _counter + 32'd1;
+                        tx_req <= 1'b1;
+                    end
+                else
+                    begin
+                        _counter <= 32'd0;
+                        tx_req <= 1'b0; // trigger w5300 sending
+                    end
+        end
 
     pll wpll(
             .inclk0(clk0),
@@ -60,7 +84,7 @@ module top(
         w5300_entry_inst_0(
             .rst_n(rst_n),
             .clk(wclk0),
-            .tx_req(),
+            .tx_req(tx_req),
             .dest_ip({8'd192, 8'd168, 8'd111, 8'd1}),
             .dest_port(16'd7000),
             .tx_data_size(32'd400),

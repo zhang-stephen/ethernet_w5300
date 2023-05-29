@@ -78,7 +78,6 @@ if {$make_assignments} {
     set_global_assignment -name VERILOG_FILE src/w5300/_rw.v
     set_global_assignment -name VERILOG_FILE src/top.v
     set_global_assignment -name QIP_FILE ip/pll/pll.qip
-    set_global_assignment -name QIP_FILE ip/ram/udp_buffer.qip
     set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_common_regs_conf_lut -section_id eda_simulation
     set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_common_regs_conf_lut
     set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_common_regs_conf_lut -section_id tb__w5300_common_regs_conf_lut
