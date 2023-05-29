@@ -15,6 +15,9 @@ module w5300_udp_conf_comm#
 
         // tx ports
         input tx_req,
+        input [31:0] dest_ip,
+        input [15:0] dest_port,
+        input [31:0] tx_data_size,
         input [15:0] tx_data,
         output reg [TX_BUFFER_ADDR_WIDTH - 1:0] tx_buffer_addr,
 
@@ -172,7 +175,7 @@ module w5300_udp_conf_comm#
             case (_state_c)
                 S_COMMON_INIT:
                     begin
-                        
+
                         w5300_common_regs_init;
                     end
                 S_S0_INIT:
@@ -247,7 +250,7 @@ module w5300_udp_conf_comm#
             .index(_lut_index),
             .data(_int_wr_lut_data)
         );
-        
+
     _w5300_exp_udp_tx_lut#(.N(0))
     _w5300_exp_udp_tx_lut_index(
         .index(_lut_index),
@@ -267,7 +270,7 @@ module w5300_udp_conf_comm#
                     _lut_index <= _lut_index + 1'b1;
                     _task_state <= (_lut_index > COMMON_REGS_LUT_STEPS) ? TS_REG_INIT_CPLT: TS_REG_INIT_WRITING_2;
                 end
-                
+
             TS_REG_INIT_WRITING_2: begin
                 {caddr, wr_data} <= {ADDR_S_VALID, _common_reg_lut_data};
                 _task_state <= op_status ? TS_REG_INIT_WRITING : TS_REG_INIT_WRITING_2;
@@ -278,7 +281,7 @@ module w5300_udp_conf_comm#
                 end
         endcase
     endtask
-    
+
     task w5300_socket0_init;
         case (_s0_init_state)
             TS_REG_INIT_IDLE:
@@ -292,7 +295,7 @@ module w5300_udp_conf_comm#
                     _lut_index <= _lut_index + 1'b1;
                     _s0_init_state <= (_lut_index > S0_REGS_CONF_LUT_STEPS) ? TS_REG_INIT_CPLT: TS_REG_INIT_WRITING_2;
                 end
-            
+
             TS_REG_INIT_WRITING_2: begin
                 {caddr, wr_data} <= {ADDR_S_VALID, _s0_reg_lut_data};
                 _s0_init_state <= op_status ? TS_REG_INIT_WRITING : TS_REG_INIT_WRITING_2;
@@ -306,7 +309,7 @@ module w5300_udp_conf_comm#
 
 //    task w5300_irq_handle;
 //        case (_task_state)
-//            
+//
 //        endcase
 //    endtask
 //
@@ -314,21 +317,46 @@ module w5300_udp_conf_comm#
         case (_s0_tx_state)
             4'h0:
                 begin
-                    _lut_index <= 6'd0;
+                    _lut_index <= 6'd5; //FIXME: first index of lut is not zero
                     _s0_tx_state <= 4'h1;
-                    
+
                 end
             4'h1:
                 begin
-                    _lut_index <= _lut_index + 1'b1;
-                    _s0_tx_state <= (_lut_index > 6'h10) ? 4'h3 : 4'h2;
+                    {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h214, dest_ip[31:16]};
+                    _s0_tx_state <= op_status ? 4'h2 : 4'h1;
                 end
             4'h2:
                 begin
-                    {caddr, wr_data} <= {ADDR_S_VALID, _s0_tx_packet_lut_data};
-                    _s0_tx_state <= op_status ? 4'h1 : 4'h2;
+                    {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h216, dest_ip[15:0]};
+                    _s0_tx_state <= op_status ? 4'h3 : 4'h2;
                 end
             4'h3:
+                begin
+                    {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h212, dest_port};
+                    _s0_tx_state <= op_status ? 4'h4 : 4'h3;
+                end
+            4'h4:
+                begin
+                    {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h220, tx_data_size[31:16]};
+                    _s0_tx_state <= op_status ? 4'h5 : 4'h4;
+                end
+            4'h5:
+                begin
+                    {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h222, tx_data_size[15:0]};
+                    _s0_tx_state <= op_status ? 4'h6 : 4'h5;
+                end
+            4'h6:
+                begin
+                    _lut_index <= _lut_index + 1'b1;
+                    _s0_tx_state <= (_lut_index > 6'h10) ? 4'h8 : 4'h7;
+                end
+            4'h7:
+                begin
+                    {caddr, wr_data} <= {ADDR_S_VALID, _s0_tx_packet_lut_data};
+                    _s0_tx_state <= op_status ? 4'h6 : 4'h7;
+                end
+            4'h8:
                 _status_2[0] <= 1'b1;
             default: ;
         endcase

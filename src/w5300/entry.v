@@ -15,6 +15,9 @@ module w5300_entry#
 
         // tx data ports
         input tx_req,
+        input [31:0] dest_ip,
+        input [15:0] dest_port,
+        input [31:0] tx_data_size,
         input [15:0] tx_data,
         output [TX_BUFFER_ADDR_WIDTH - 1:0] tx_buffer_addr,
 
@@ -55,6 +58,9 @@ module w5300_entry#
             .rst_n(rst_n),
             .clk(clk),
             .tx_req(tx_req),
+            .dest_ip(dest_ip),
+            .dest_port(dest_port),
+            .tx_data_size(tx_data_size),
             .tx_data(tx_data),
             .tx_buffer_addr(tx_buffer_addr),
             .rx_data(rx_data),

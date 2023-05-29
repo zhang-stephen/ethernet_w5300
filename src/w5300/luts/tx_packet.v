@@ -31,13 +31,6 @@ parameter [3:0] N = 0)
     
     always @*
         case (index)
-            6'h01: data <= {ADDR_OP_WR, Sn_DIPR0, 16'hc0a8};        // destination IP: 192.168.111.1
-            6'h02: data <= {ADDR_OP_WR, Sn_DIPR2, 16'h6f01};
-            6'h03: data <= {ADDR_OP_RD, Sn_DIPR0, 16'hffff};
-            6'h04: data <= {ADDR_OP_WR, Sn_DPORTR, 16'h1b58};       // destination port: 7000
-//            6'h03: data <= {ADDR_OP_WR, Sn_DHAR0, 16'h00e0};        // destination mac: 00:e0:4c:68:0b:58
-//            6'h04: data <= {ADDR_OP_WR, Sn_DHAR2, 16'h4c68};
-//            6'h05: data <= {ADDR_OP_WR, Sn_DHAR4, 16'h0b58};
             6'h06: data <= {ADDR_OP_WR, Sn_TX_FIFOR, {"N", "J"}};
             6'h07: data <= {ADDR_OP_WR, Sn_TX_FIFOR, {"U", "S"}};
             6'h08: data <= {ADDR_OP_WR, Sn_TX_FIFOR, {"T", "-"}};
