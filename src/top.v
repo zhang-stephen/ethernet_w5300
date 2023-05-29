@@ -21,10 +21,14 @@ module top(
         output [3:0] leds
     );
 
+    localparam BUFFER_WIDTH = 8'h08;
+    
     wire wclk0;
     wire stp_clk;
     wire w5300_busy_n;
     wire [2:0] err_code;
+    wire [BUFFER_WIDTH - 1:0] tx_buffer_addr;
+    wire [15:0] tx_buffer_data;
 
     pll wpll(
             .inclk0(clk0),
@@ -38,13 +42,20 @@ module top(
                    .err_n(err_code),
                    .leds(leds)
                );
-
+               
+    ram_1port ram_1port_inst0(
+        .address(tx_buffer_addr),
+        .clock(wclk0),
+        .data(),
+        .wren(),
+        .q(tx_buffer_data)
+    );
 
     w5300_entry#
         (
             .CLK_FREQ(100),
-            .TX_BUFFER_ADDR_WIDTH(12),
-            .RX_BUFFER_ADDR_WIDTH(12)
+            .TX_BUFFER_ADDR_WIDTH(BUFFER_WIDTH),
+            .RX_BUFFER_ADDR_WIDTH(BUFFER_WIDTH)
         )
         w5300_entry_inst_0(
             .rst_n(rst_n),
@@ -52,9 +63,9 @@ module top(
             .tx_req(),
             .dest_ip({8'd192, 8'd168, 8'd111, 8'd1}),
             .dest_port(16'd7000),
-            .tx_data_size(32'd16),
-            .tx_data(),
-            .tx_buffer_addr(),
+            .tx_data_size(32'd400),
+            .tx_data(tx_buffer_data),
+            .tx_buffer_addr(tx_buffer_addr),
             .rx_data(),
             .rx_buffer_addr(),
             .rx_req(rx_req),

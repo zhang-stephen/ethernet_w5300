@@ -51,7 +51,7 @@ module _w5300_socket_n_regs_conf_lut#
      * Socket N Maximum Segment Size Register, Sn_MSSR
      */
     localparam [9:0] Sn_MSSR = 10'h218 + SOCKET_N_OFFSET;
-    localparam Sn_MSSR_UDP_DEFAULT = 16'h05c0; // 1468 Bytes
+    localparam Sn_MSSR_UDP_DEFAULT = 16'h05c0; // 1472 Bytes
 
     always @*
         case (index)
@@ -60,7 +60,7 @@ module _w5300_socket_n_regs_conf_lut#
             6'h01:
                 data <= {ADDR_OP_WR, Sn_IMR, Sn_IMR_SENDOK | Sn_IMR_RECV};
             6'h02:
-                data <= {ADDR_OP_WR, Sn_PORTR, 16'h1b58};        // port: 7000(0x1b58)
+                data <= {ADDR_OP_WR, Sn_PORTR, 16'd7000};
             6'h03:
                 data <= {ADDR_OP_WR, Sn_MSSR, Sn_MSSR_UDP_DEFAULT};
             6'h04:

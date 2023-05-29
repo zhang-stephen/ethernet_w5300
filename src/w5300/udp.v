@@ -19,11 +19,11 @@ module w5300_udp_conf_comm#
         input [15:0] dest_port,
         input [31:0] tx_data_size,
         input [15:0] tx_data,
-        output reg [TX_BUFFER_ADDR_WIDTH - 1:0] tx_buffer_addr,
+        output reg [TX_BUFFER_ADDR_WIDTH:0] tx_buffer_addr,
 
         // rx ports
         output reg [15:0] rx_data,
-        output reg [RX_BUFFER_ADDR_WIDTH - 1:0] rx_buffer_addr,
+        output reg [RX_BUFFER_ADDR_WIDTH:0] rx_buffer_addr,
         output reg rx_req,
 
         // control ports
@@ -251,12 +251,6 @@ module w5300_udp_conf_comm#
             .data(_int_wr_lut_data)
         );
 
-    _w5300_exp_udp_tx_lut#(.N(0))
-    _w5300_exp_udp_tx_lut_index(
-        .index(_lut_index),
-        .data(_s0_tx_packet_lut_data)
-    );
-
     task w5300_common_regs_init;
         case (_task_state)
             TS_REG_INIT_IDLE:
@@ -314,49 +308,54 @@ module w5300_udp_conf_comm#
 //    endtask
 //
     task w5300_udp_tx;
+        // FIXME: hardcoded status should not be used!
         case (_s0_tx_state)
             4'h0:
                 begin
-                    _lut_index <= 6'd5; //FIXME: first index of lut is not zero
                     _s0_tx_state <= 4'h1;
-
+                    tx_buffer_addr <= 0;
                 end
-            4'h1:
+            4'h1: // DIPR0
                 begin
                     {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h214, dest_ip[31:16]};
                     _s0_tx_state <= op_status ? 4'h2 : 4'h1;
                 end
-            4'h2:
+            4'h2: // DIPR2
                 begin
                     {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h216, dest_ip[15:0]};
                     _s0_tx_state <= op_status ? 4'h3 : 4'h2;
                 end
-            4'h3:
+            4'h3: // DPORTR
                 begin
                     {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h212, dest_port};
-                    _s0_tx_state <= op_status ? 4'h4 : 4'h3;
+                    _s0_tx_state <= op_status ? 4'h6 : 4'h3;
                 end
-            4'h4:
+            4'h6: //TX_FIFOR
+                begin
+                    {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h22e, tx_data};
+                    _s0_tx_state <= op_status ? 4'h7 : 4'h6;
+                end
+            4'h7: // buff_addr++
+                begin
+                    tx_buffer_addr <= tx_buffer_addr + 1'b1;
+                    _s0_tx_state <= (tx_buffer_addr + 1'b1 >= tx_data_size >> 1) ? 4'h4 : 4'h6;
+                end
+            4'h4: // WRSR0
                 begin
                     {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h220, tx_data_size[31:16]};
                     _s0_tx_state <= op_status ? 4'h5 : 4'h4;
                 end
-            4'h5:
+            4'h5: // WRSR2
                 begin
                     {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h222, tx_data_size[15:0]};
-                    _s0_tx_state <= op_status ? 4'h6 : 4'h5;
+                    _s0_tx_state <= op_status ? 4'h8 : 4'h5;
                 end
-            4'h6:
+            4'h8: // CR
                 begin
-                    _lut_index <= _lut_index + 1'b1;
-                    _s0_tx_state <= (_lut_index > 6'h10) ? 4'h8 : 4'h7;
+                    {caddr, wr_data} <= {ADDR_S_VALID, ADDR_OP_WR, 10'h202, 16'h0020};
+                    _s0_tx_state <= op_status ? 4'h9 : 4'h8;
                 end
-            4'h7:
-                begin
-                    {caddr, wr_data} <= {ADDR_S_VALID, _s0_tx_packet_lut_data};
-                    _s0_tx_state <= op_status ? 4'h6 : 4'h7;
-                end
-            4'h8:
+            4'h9:
                 _status_2[0] <= 1'b1;
             default: ;
         endcase
