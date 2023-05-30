@@ -1,4 +1,4 @@
-// W5300 top module
+// W5300 entry module
 // Stephen Zhang
 // 2023-04-17
 
@@ -10,35 +10,35 @@ module w5300_entry#
     )
     (
         // driver ports
-        input rst_n,
-        input clk,
+        input rst_n,                                                // module reset
+        input clk,                                                  // driver clock, 100MHz in default
 
         // tx data ports
-        input tx_req,
-        input [31:0] dest_ip,
-        input [15:0] dest_port,
-        input [31:0] tx_data_size,
-        input [15:0] tx_data,
-        output [TX_BUFFER_ADDR_WIDTH - 1:0] tx_buffer_addr,
+        input tx_req,                                               // tx request, pull-down to trigger sending
+        input [31:0] dest_ip,                                       // destination IPv4
+        input [15:0] dest_port,                                     // destination port
+        input [31:0] tx_data_size,                                  // data length in bytes to be sent
+        input [15:0] tx_data,                                       // data bus of tx buffer
+        output [TX_BUFFER_ADDR_WIDTH - 1:0] tx_buffer_addr,         // addr bus of tx buffer
 
         // rx data ports
-        output [15:0] rx_data,
-        output [RX_BUFFER_ADDR_WIDTH - 1:0] rx_buffer_addr,
-        output rx_req,
+        output [15:0] rx_data,                                      // data bus of rx buffer
+        output [RX_BUFFER_ADDR_WIDTH - 1:0] rx_buffer_addr,         // addr bus of rx buffer
+        output rx_req,                                              // rx request, used to be wr_en to rx buffer or interrupt if data were received
 
         // control ports
-        output [2 :0] err_code,
-        output busy_n,
+        output [2 :0] err_code,                                     // error code for LEDs
+        output busy_n,                                              // w5300 status, high for busy and low for IDLE
 
         // physical ports
-        inout tri [15:0] data,
-        output [9:0] addr,
-        output wrst_n,
-        output cs_n,
-        output rd_n,
-        output we_n,
-        output rw_n,
-        input int_n
+        inout tri [15:0] data,                                      // data bus to w5300 chip
+        output [9:0] addr,                                          // addr bus to w5300 chip
+        output wrst_n,                                              // reset to w5300 chip
+        output cs_n,                                                // chip select to w5300 chip
+        output rd_n,                                                // read enable to w5300 chip
+        output we_n,                                                // write enable to w5300 chip
+        output rw_n,                                                // r/w control to isolation gates(optional)
+        input int_n                                                 // interrupt from w5300 chip
     );
 
     assign wrst_n = rst_n;

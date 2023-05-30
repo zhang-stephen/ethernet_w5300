@@ -115,11 +115,6 @@ module w5300_udp_conf_comm#
     reg [5 :0] _lut_index;
     wire [26:0] _common_reg_lut_data;
     wire [26:0] _s0_reg_lut_data;
-    wire [26:0] _s0_udp_tx_reg_lut_data;
-    wire [26:0] _s0_udp_rx_reg_lut_data;
-    wire [26:0] _s0_tx_packet_lut_data;
-    wire [26:0] _int_rd_lut_data;
-    wire [26:0] _int_wr_lut_data;
 
     // assign
     assign err_code = _status[2:0];
@@ -172,7 +167,6 @@ module w5300_udp_conf_comm#
             case (_state_c)
                 S_COMMON_INIT:
                     begin
-
                         w5300_common_regs_init;
                     end
                 S_S0_INIT:
@@ -207,42 +201,6 @@ module w5300_udp_conf_comm#
         _w5300_socket_n_regs_conf_lut_inst(
             .index(_lut_index),
             .data(_s0_reg_lut_data)
-        );
-
-    _w5300_socket_n_regs_udp_tx_lut#
-        (
-            .N(0)
-        )
-        _w5300_socket_n_regs_udp_tx_lut_inst(
-            .index(_lut_index),
-            .data(_s0_udp_tx_reg_lut_data)
-        );
-
-    _w5300_socket_n_regs_udp_rx_lut#
-        (
-            .N(0)
-        )
-        _w5300_socket_n_regs_udp_rx_lut_inst(
-            .index(_lut_index),
-            .data(_s0_udp_rx_reg_lut_data)
-        );
-
-    _w5300_interrupt_regs_lut#
-        (
-            .op(ADDR_OP_RD)
-        )
-        _w5300_interrupt_regs_lut_rd_inst(
-            .index(_lut_index),
-            .data(_int_rd_lut_data)
-        );
-
-    _w5300_interrupt_regs_lut#
-        (
-            .op(ADDR_OP_WR)
-        )
-        _w5300_interrupt_regs_lut_wr_inst(
-            .index(_lut_index),
-            .data(_int_wr_lut_data)
         );
 
     task w5300_common_regs_init;

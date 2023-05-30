@@ -108,7 +108,7 @@ module _w5300_common_regs_conf_lut
             6'h04:
                 data <= {ADDR_OP_WR, SHAR4, 16'h0203};
             6'h05:
-                data <= {ADDR_OP_WR, GAR0, 16'hc0a8};    // gateway: 10.10.0.1
+                data <= {ADDR_OP_WR, GAR0, 16'hc0a8};    // gateway: 192.168.111.1
             6'h06:
                 data <= {ADDR_OP_WR, GAR2, 16'h6f01};
             6'h07:
@@ -118,7 +118,7 @@ module _w5300_common_regs_conf_lut
             6'h09:
                 data <= {ADDR_OP_WR, SIPR0, 16'hc0a8};
             6'h0a:
-                data <= {ADDR_OP_WR, SIPR2, 16'h6f0f};   // ip: 10.10.0.15
+                data <= {ADDR_OP_WR, SIPR2, 16'h6f0f};   // ip: 192.168.111.15
             6'h0b:
                 data <= {ADDR_OP_WR, RTR, 16'h0fa0};     // 400ms
             6'h0c:

@@ -65,12 +65,10 @@ if {$make_assignments} {
     set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_parallel_if_rw -section_id eda_simulation
     set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_parallel_if_rw
     set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_parallel_if_rw -section_id tb__w5300_parallel_if_rw
-    set_global_assignment -name VERILOG_FILE testbench/w5300/luts/_interrupt_reg.v
     set_global_assignment -name VERILOG_FILE testbench/w5300/luts/_common_reg.v
     set_global_assignment -name VERILOG_FILE testbench/w5300/_rw.v
     set_global_assignment -name VERILOG_FILE src/led/led.v
     set_global_assignment -name VERILOG_FILE src/w5300/luts/_socket_reg.v
-    set_global_assignment -name VERILOG_FILE src/w5300/luts/_interrupt_reg.v
     set_global_assignment -name VERILOG_FILE src/w5300/luts/_common_reg.v
     set_global_assignment -name VERILOG_FILE src/w5300/udp.v
     set_global_assignment -name VERILOG_FILE src/w5300/if.v
