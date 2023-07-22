@@ -14,7 +14,7 @@
 
 # Quartus Prime: Generate Tcl File for Project
 # File: ethernet_w5300.tcl
-# Generated on: Tue May 30 00:34:16 2023
+# Generated on: Sat Jul 22 19:23:45 2023
 
 # Load Quartus Prime Tcl Project package
 package require ::quartus::project
@@ -65,6 +65,13 @@ if {$make_assignments} {
     set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_parallel_if_rw -section_id eda_simulation
     set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_parallel_if_rw
     set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_parallel_if_rw -section_id tb__w5300_parallel_if_rw
+    set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_common_regs_conf_lut -section_id eda_simulation
+    set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_common_regs_conf_lut
+    set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_common_regs_conf_lut -section_id tb__w5300_common_regs_conf_lut
+    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/_rw.v -section_id tb__w5300_parallel_if_rw
+    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/luts/_common_reg.v -section_id tb__w5300_common_regs_conf_lut
+    set_global_assignment -name ENABLE_SIGNALTAP OFF
+    set_global_assignment -name USE_SIGNALTAP_FILE output_files/stp2.stp
     set_global_assignment -name VERILOG_FILE testbench/w5300/luts/_common_reg.v
     set_global_assignment -name VERILOG_FILE testbench/w5300/_rw.v
     set_global_assignment -name VERILOG_FILE src/led/led.v
@@ -76,11 +83,6 @@ if {$make_assignments} {
     set_global_assignment -name VERILOG_FILE src/w5300/_rw.v
     set_global_assignment -name VERILOG_FILE src/top.v
     set_global_assignment -name QIP_FILE ip/pll/pll.qip
-    set_global_assignment -name EDA_TEST_BENCH_NAME tb__w5300_common_regs_conf_lut -section_id eda_simulation
-    set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb__w5300_common_regs_conf_lut
-    set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb__w5300_common_regs_conf_lut -section_id tb__w5300_common_regs_conf_lut
-    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/_rw.v -section_id tb__w5300_parallel_if_rw
-    set_global_assignment -name EDA_TEST_BENCH_FILE testbench/w5300/luts/_common_reg.v -section_id tb__w5300_common_regs_conf_lut
     set_global_assignment -name MIF_FILE ip/ram/ram_1port.mif
     set_global_assignment -name QIP_FILE ip/ram/ram_1port.qip
     set_location_assignment PIN_B10 -to addr[9]
