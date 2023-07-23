@@ -1,0 +1,11 @@
+[option]
+exclude_paths = ['ip/*']
+
+[textrules]
+header_copyright = true
+style_directives= true
+style_indent = true
+style_semicolon = true
+style_textwidth = 120
+
+[syntaxrules]

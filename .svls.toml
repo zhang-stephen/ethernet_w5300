@@ -1,0 +1,6 @@
+[verilog]
+include_paths = ['src/w5300']
+defines = []
+
+[option]
+linter = true
