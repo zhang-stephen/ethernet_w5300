@@ -121,4 +121,152 @@ function automatic get_socket_n_reg
     return baseAddr + socketN << $clog2(offset);
 endfunction
 
+/**
+ * Socket N Mode Register, Sn_MR
+ */
+localparam Sn_MR = 10'h200;
+localparam Sn_MR_ALIGN = 16'h0100;
+localparam Sn_MR_MULTICAST = 16'h0080;
+localparam Sn_MR_MAC_FILTER = 16'h0040;
+localparam Sn_MR_NO_DELAY_ACK = 16'h0020;
+localparam Sn_MR_IGMP_VER = 16'h0020;
+localparam Sn_MR_P_MAC_RAW = 16'h00004;
+localparam Sn_MR_P_IP_RAW = 16'h0003;
+localparam Sn_MR_P_UDP = 16'h0002;
+localparam Sn_MR_P_TCP = 16'h0001;
+localparam Sn_MR_P_INVALID = 16'h0000;
+
+/**
+ * Socket N Command Register, Sn_CR
+ */
+localparam Sn_CR = 10'h202;
+localparam Sn_CR_OPEN = 16'h0001;
+localparam Sn_CR_LISTEN = 16'h0002;
+localparam Sn_CR_CONNECT = 16'h0004;
+localparam Sn_CR_DISCONNECT = 16'h0008;
+localparam Sn_CR_CLOSE = 16'h0010;
+localparam Sn_CR_SEND = 16'h0020;
+localparam Sn_CR_SEND_MAC = 16'h0021;
+localparam Sn_CR_SEND_KEEP = 16'h0022;
+localparam Sn_CR_RECEIVE = 16'h0040;
+
+/**
+ * Socket N Interrupt Register, Sn_IR
+ * Socket N Interrupt Mask Register, Sn_IMR
+ */
+localparam Sn_IR = 10'h206;
+localparam Sn_IMR = 10'h204;
+localparam Sn_IR_IMR_SENDOK = 16'h0010;
+localparam Sn_IR_IMR_TIMEOUT = 16'h0008;
+localparam Sn_IR_IMR_RECV = 16'h0004;
+localparam Sn_IR_IMR_DISCONNECT = 16'h0002;
+localparam Sn_IR_IMR_CONNECT = 16'h0001;
+
+/**
+ * Socket N Status Register, Sn_SSR
+ * the lower 8 bits are effective
+ */
+localparam Sn_SSR = 10'h208;
+localparam Sn_SSR_SOCK_CLOSED = 16'hxx00;
+localparam Sn_SSR_SOCK_INIT = 16'hxx13;
+localparam Sn_SSR_SOCK_LISTEN = 16'hxx14;
+localparam Sn_SSR_SOCK_ESTABLISHED = 16'hxx17;
+localparam Sn_SSR_SOCK_CLOSE_WAIT = 16'hxx1c;
+localparam Sn_SSR_SOCK_UDP = 16'hxx22;
+localparam Sn_SSR_SOCK_IPRAW = 16'hxx32;
+localparam Sn_SSR_SOCK_MACRAW = 16'hxx42;
+// some temporary status are ignored..., see datasheet Sn_SSR section
+
+/**
+ * Socket N source Port Register, Sn_PORTR
+ */
+localparam Sn_PORTR = 10'h20a;
+
+/**
+ * Socket N Destination Hardware Address Register, Sn_DHAR
+ */
+localparam Sn_DHAR0 = 10'h20c;
+localparam Sn_DHAR2 = 10'h20e;
+localparam Sn_DHAR4 = 10'h210;
+
+/**
+ * Socket N Destination Port Register, Sn_DPORTR
+ */
+localparam Sn_DPORTR = 10'h212;
+
+/**
+ * Socket N Destination IP Address Register, Sn_DIPR
+ */
+localparam Sn_DIPR0 = 10'h214;
+localparam Sn_DIPR2 = 10'h216;
+
+/**
+ * Socket N Maximum Segment Size Register, Sn_MSSR
+ * KEEP this default value if no special requirement!
+ */
+localparam Sn_MSSR = 10'h218;
+localparam Sn_MSSR_TCP = 16'd1460;
+localparam Sn_MSSR_UDP = 16'd1472;
+localparam Sn_MSSR_IPRAW = 16'd1480;
+localparam Sn_MSSR_MACRAW = 16'd1514;
+
+/**
+ * Socket N Keep Alive Time Register, Sn_KPALVTR(min time unit is 5s)
+ * Socket N Protocol Number Register, Sn_PROTOR
+ * they are 2 1-byte registers, and I have to bundle them up for 16-bit data bus
+ */
+localparam Sn_KPALVTR_PROTOR = 10'h21a;
+
+/**
+ * Socket N TOS(Type of Service) Register, Sn_TOSR
+ */
+localparam Sn_TOSR = 16'h21c;
+
+/**
+ * Socket N TTL(Time to Live) Register, Sn_TTLR
+ */
+localparam Sn_TTLR = 10'h21e;
+localparam Sn_TTLR_DEFAULT = 16'd128;
+
+/**
+ * Socket N Tx Write Size Register, Sn_TX_WRSR
+ */
+localparam Sn_TX_WRSR0 = 10'h220;
+localparam Sn_TX_WRSR2 = 10'h222;
+
+/**
+ * Socket N Tx Free Size Register, Sn_TX_FSR
+ */
+localparam Sn_TX_FSR0 = 10'h224;
+localparam Sn_TX_FSR2 = 10'h226;
+
+/**
+ * Socket N Rx Received Size Register, Sn_RX_RSR
+ */
+localparam Sn_RX_RSR0 = 10'h228;
+localparam Sn_RX_RSR2 = 10'h22a;
+
+/**
+ * Socket N Fragment Register, Sn_FRAGR
+ */
+localparam Sn_FRAGR = 10'h22c;
+
+/**
+ * Socket N Tx FIFO Register, Sn_TX_FIFOR
+ */
+localparam Sn_TX_FIFOR = 10'h22e;
+
+/**
+ * Socket N Rx FIFO Register, Sn_RX_FIFOR
+ */
+localparam Sn_RX_FIFOR = 10'h230;
+
+endpackage
+
+package network;
+
+function automatic calc_gateway(input [31:0] srcIpv4);
+    return {srcIpv4[31:8], 8'd1};
+endfunction
+
 endpackage
