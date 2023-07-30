@@ -112,12 +112,14 @@ localparam IDR = 10'h0fe;
 
 /************************* Socket Registers *************************/
 
-function automatic get_socket_n_reg
+localparam Sn_ADDR_BASE = 10'h100; // just for some judge
+
+function automatic bit [9:0] get_socket_n_reg
 (
     input [9:0] baseAddr,
     input [9:0] socketN = 10'h000
 );
-    unsigned [9:0] offset = 10'h040;
+    bit [9:0] offset = 10'h040;
     return baseAddr + socketN << $clog2(offset);
 endfunction
 
@@ -261,6 +263,31 @@ localparam Sn_TX_FIFOR = 10'h22e;
  */
 localparam Sn_RX_FIFOR = 10'h230;
 
+/************************* Other Definitions *************************/
+typedef enum bit
+{
+    WR = 1'b0,
+    RD = 1'b1
+} AddrOperation;
+
+typedef enum bit
+{
+    Valid = 1'b0,
+    Invalid = 1'b1
+} AddrValidStatus;
+
+typedef enum bit [2:0]
+{
+    Socket0 = 3'd0,
+    Socket1 = 3'd1,
+    Socket2 = 3'd2,
+    Socket3 = 3'd3,
+    Socket4 = 3'd4,
+    Socket5 = 3'd5,
+    Socket6 = 3'd6,
+    Socket7 = 3'd7
+} Socket;
+
 endpackage
 
 package network;
@@ -268,5 +295,11 @@ package network;
 function automatic calc_gateway(input [31:0] srcIpv4);
     return {srcIpv4[31:8], 8'd1};
 endfunction
+
+endpackage
+
+package common;
+
+localparam CLK_REF = 100; // 100MHz, for delay counting
 
 endpackage
