@@ -1,2 +1,8 @@
 src/top.sv top=top
-# src/w5300/defs.sv
+
+# common modules
+src/tick.sv
+
+# w5300 design files
+src/w5300/defs.sv
+src/w5300/if.sv
