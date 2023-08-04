@@ -80,6 +80,9 @@ always_ff @(posedge clk, negedge rst_n) begin : DataOut
     else if (state_c == Write) begin
         data_out <= ctrl_wr_data;
     end
+    else begin
+        data_out <= 16'd0;
+    end
 end
 
 always_ff @(posedge clk, negedge rst_n) begin : DataIn
@@ -88,6 +91,9 @@ always_ff @(posedge clk, negedge rst_n) begin : DataIn
     end
     else if (state_c == Read) begin
         data_in <= data;
+    end
+    else begin
+        data_in <= 16'd0;
     end
 end
 

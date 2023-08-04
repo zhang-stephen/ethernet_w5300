@@ -1,8 +1,12 @@
 src/top.sv top=top
 
+# IP cores
+ip/pll/pll.qip
+
 # common modules
 src/tick.sv
 
 # w5300 design files
+src/w5300/config.sv
 src/w5300/defs.sv
 src/w5300/if.sv

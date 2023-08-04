@@ -65,6 +65,12 @@ localparam SUBR0 = 10'h014;
 localparam SUBR2 = 10'h016;
 
 /**
+ * Source IP Address Register, SIPR
+ */
+localparam SIPR0 = 10'h018;
+localparam SIPR2 = 10'h01a;
+
+/**
  * Re-transmission Timeout-period Register, RTR
  */
 localparam RTR = 10'h01c;
