@@ -272,14 +272,14 @@ localparam Sn_RX_FIFOR = 10'h230;
 /************************* Other Definitions *************************/
 typedef enum bit
 {
-    WR = 1'b0,
-    RD = 1'b1
+    WR = 1'b1,
+    RD = 1'b0
 } AddrOperation;
 
 typedef enum bit
 {
-    Valid = 1'b0,
-    Invalid = 1'b1
+    Valid = 1'b1,
+    Invalid = 1'b0
 } AddrValidStatus;
 
 typedef enum bit [2:0]
