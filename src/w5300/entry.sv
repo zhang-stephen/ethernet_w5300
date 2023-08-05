@@ -110,4 +110,17 @@ w5300_common_reg_conf #(
     .enable()
 );
 
+w5300_socket_n_tcp_server_conf #(
+    .port(port)
+) w5300_socket0_tcp_server_conf_inst(
+    .clk(clk),
+    .rst_n(rst_n),
+    .done(),
+    .addr(socket_config_addr),
+    .wr_data(socket_config_wr_data),
+    .rd_data(if_rd_data),
+    .op_state(if_op_state),
+    .enable()
+);
+
 endmodule

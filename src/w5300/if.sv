@@ -110,9 +110,9 @@ always_ff @(posedge clk, negedge rst_n) begin : InternalTickTimer
     end
 end
 
-assign rst_p1_cplt = (tick_cnt == RST_P1_TICKS) ? 1'b1 : 1'b0;
-assign rst_p2_cplt = (tick_cnt == RST_P2_TICKS) ? 1'b1 : 1'b0;
-assign data_setup_flag = (tick_cnt == DATA_SETUP_TICKS) ? 1'b1 : 1'b0;
+assign rst_p1_cplt = (tick_cnt >= RST_P1_TICKS) ? 1'b1 : 1'b0;
+assign rst_p2_cplt = (tick_cnt >= RST_P2_TICKS) ? 1'b1 : 1'b0;
+assign data_setup_flag = (tick_cnt >= DATA_SETUP_TICKS) ? 1'b1 : 1'b0;
 
 always_comb begin
     case (state_c)

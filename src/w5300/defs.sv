@@ -126,7 +126,7 @@ function automatic bit [9:0] get_socket_n_reg
     input [9:0] socketN = 10'h000
 );
     bit [9:0] offset = 10'h040;
-    return baseAddr + socketN << $clog2(offset);
+    return baseAddr + socketN * offset;
 endfunction
 
 /**
