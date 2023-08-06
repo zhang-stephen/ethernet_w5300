@@ -73,27 +73,21 @@ assign wr_n = (state_c == Write) ? 1'b0 : 1'b1;
 assign data         = !wr_n ? data_out : {16{1'bz}};
 assign ctrl_rd_data = data_in;
 
-always_ff @(posedge clk, negedge rst_n) begin : DataOut
+always_latch begin : DataOut
     if (!rst_n) begin
         data_out <= 16'd0;
     end
     else if (state_c == Write) begin
         data_out <= ctrl_wr_data;
     end
-    else begin
-        data_out <= 16'd0;
-    end
 end
 
-always_ff @(posedge clk, negedge rst_n) begin : DataIn
+always_latch begin : DataIn
     if (!rst_n) begin
         data_in <= 16'd0;
     end
     else if (state_c == Read) begin
         data_in <= data;
-    end
-    else begin
-        data_in <= 16'd0;
     end
 end
 

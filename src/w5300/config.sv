@@ -43,12 +43,17 @@ always_ff @(posedge clk, negedge rst_n) begin
 end
 
 always_comb begin
-    case (state_c)
-        Initial:   state_n <= (enable & op_state) ? Operating : Initial;
-        Operating: state_n <= op_cnt == NUM_OF_OPERATIONS ? Done : Operating;
-        Done:      state_n <= Done;
-        default:   state_n <= Initial;
-    endcase
+    if (!rst_n) begin
+        state_n <= Initial;
+    end
+    else begin
+        case (state_c)
+            Initial:   state_n <= enable ? Operating : Initial;
+            Operating: state_n <= op_cnt == NUM_OF_OPERATIONS ? Done : Operating;
+            Done:      state_n <= Done;
+            default:   state_n <= Initial;
+        endcase
+    end
 end
 
 always_ff @(posedge clk, negedge rst_n) begin
@@ -157,7 +162,7 @@ always_comb begin
                     state_n <= SocketClose;
                 end
                 else begin
-                    state_n <= (rd_data== Sn_SSR_SOCK_INIT) ? Listen : WaitSockInit;
+                    state_n <= (rd_data[7:0] == Sn_SSR_SOCK_INIT[7:0]) ? Listen : WaitSockInit;
                 end
             end
 
@@ -166,7 +171,7 @@ always_comb begin
                     state_n <= SocketClose;
                 end
                 else begin
-                    state_n <= (rd_data == Sn_SSR_SOCK_LISTEN) ? Done : WaitListen;
+                    state_n <= (rd_data[7:0] == Sn_SSR_SOCK_LISTEN[7:0]) ? Done : WaitListen;
                 end
             end
 
@@ -194,7 +199,7 @@ always_comb begin : BusLookUpTable
                 4'd0: {addr, wr_data} <= {WR, MR, Sn_MR_P_TCP};
                 4'd1: {addr, wr_data} <= {WR, PORTR, port};
                 4'd2: {addr, wr_data} <= {WR, IMR, Sn_IR_IMR_SENDOK |
-                                                   Sn_IR_IMR_TIMEPOUT |
+                                                   Sn_IR_IMR_TIMEOUT |
                                                    Sn_IR_IMR_RECV |
                                                    Sn_IR_IMR_DISCONNECT |
                                                    Sn_IR_IMR_CONNECT};

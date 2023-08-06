@@ -173,12 +173,12 @@ w5300_socket_n_tcp_server_conf #(
 ) w5300_socket0_tcp_server_conf_inst(
     .clk(clk),
     .rst_n(rst_n),
-    .done(socket_config_enable),
+    .done(socket_config_done),
     .addr(socket_config_addr),
     .wr_data(socket_config_wr_data),
     .rd_data(if_rd_data),
     .op_state(if_op_state),
-    .enable(socket_config_done)
+    .enable(socket_config_enable)
 );
 
 w5300_irq_handler w5300_irq_handler_inst(
