@@ -1,10 +1,12 @@
 src/top.sv top=top
 
-# IP cores
-ip/pll/pll.qip
-
 # common modules
 # src/tick.sv
+
+# IP cores from Quartus
+ip/pll/pll.qip
+ip/ram/ram.qip
+ip/rom/rom.qip
 
 # w5300 design files
 src/w5300/config.sv

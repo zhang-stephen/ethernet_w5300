@@ -55,8 +55,8 @@ set_location_assignment PIN_A5 -to addr[0]
 set_location_assignment PIN_A4 -to rd_n
 set_location_assignment PIN_A3 -to int_n
 set_location_assignment PIN_A2 -to rw_n
-set_location_assignment PIN_B3 -to wrst_n
-set_location_assignment PIN_B5 -to we_n
+set_location_assignment PIN_B3 -to w_rst_n
+set_location_assignment PIN_B5 -to wr_n
 set_location_assignment PIN_N13 -to rst_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to addr[9]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to addr[8]
@@ -97,5 +97,5 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to rst_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to rw_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to uart_rxd
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to uart_txd
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to we_n
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to wrst_n
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to wr_n
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to w_rst_n
