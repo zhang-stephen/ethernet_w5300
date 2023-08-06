@@ -115,6 +115,7 @@ localparam FMTUR = 10'h04e;
  * Identification Register, IDR
  */
 localparam IDR = 10'h0fe;
+localparam IDR_ID = 16'h5300;
 
 /************************* Socket Registers *************************/
 

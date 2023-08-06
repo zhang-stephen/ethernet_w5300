@@ -95,7 +95,6 @@ always_latch begin
                 socket <= {1'b0, Socket0};
         endcase
     end
-
 end
 
 endmodule
