@@ -118,10 +118,11 @@ enum bit [3:0]
 
 localparam MR    = get_socket_n_reg(.baseAddr(Sn_MR), .socketN(N));
 localparam CR    = get_socket_n_reg(.baseAddr(Sn_CR), .socketN(N));
+localparam IMR   = get_socket_n_reg(.baseAddr(Sn_IMR), .socketN(N));
 localparam SSR   = get_socket_n_reg(.baseAddr(Sn_SSR), .socketN(N));
 localparam PORTR = get_socket_n_reg(.baseAddr(Sn_PORTR), .socketN(N));
 localparam KPALVTR_PROTOR = get_socket_n_reg(.baseAddr(Sn_KPALVTR_PROTOR), .socketN(N));
-localparam OP_CNT         = 4'd5;
+localparam OP_CNT         = 4'd6;
 localparam OP_TIMEOUT     = 16'd100;
 
 logic [3 :0] init_tcp_op_cnt;
@@ -192,8 +193,13 @@ always_comb begin : BusLookUpTable
             case (init_tcp_op_cnt)
                 4'd0: {addr, wr_data} <= {WR, MR, Sn_MR_P_TCP};
                 4'd1: {addr, wr_data} <= {WR, PORTR, port};
-                4'd2: {addr, wr_data} <= {WR, KPALVTR_PROTOR, {8'd1, 8'd1}}; // KPALVTR = 1, Keep Alive Packet trasmission per 5s * KPLVTR
-                4'd3: {addr, wr_data} <= {WR, CR, Sn_CR_OPEN};
+                4'd2: {addr, wr_data} <= {WR, IMR, Sn_IR_IMR_SENDOK |
+                                                   Sn_IR_IMR_TIMEPOUT |
+                                                   Sn_IR_IMR_RECV |
+                                                   Sn_IR_IMR_DISCONNECT |
+                                                   Sn_IR_IMR_CONNECT};
+                4'd3: {addr, wr_data} <= {WR, KPALVTR_PROTOR, {8'd1, 8'd1}}; // KPALVTR = 1, Keep Alive Packet trasmission per 5s * KPLVTR
+                4'd4: {addr, wr_data} <= {WR, CR, Sn_CR_OPEN};
                 default:
                     {addr, wr_data} <= {RD, 10'h000, 16'd0};
             endcase

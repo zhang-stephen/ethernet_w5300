@@ -42,8 +42,8 @@ localparam TIMEOUT = 6000 * CLK_FREQ / CLK_REF; // 60us
 enum bit [3:0] {
     Initial,
     ConfigCommon,
-    ConfigSocket,
     HandShake,
+    ConfigSocket,
     Idle,
     IrqHandle,
     Transmitting,
@@ -111,6 +111,7 @@ w5300_common_reg_conf #(
 );
 
 w5300_socket_n_tcp_server_conf #(
+    .N(0),
     .port(port)
 ) w5300_socket0_tcp_server_conf_inst(
     .clk(clk),
@@ -121,6 +122,19 @@ w5300_socket_n_tcp_server_conf #(
     .rd_data(if_rd_data),
     .op_state(if_op_state),
     .enable()
+);
+
+w5300_irq_handler w5300_irq_handler_inst(
+    .clk(clk),
+    .rst_n(rst_n),
+    .clear(),
+    .addr(irq_handler_addr),
+    .wr_data(irq_handler_wr_data),
+    .rd_data(if_rd_data),
+    .ir_state(),
+    .socket(),
+    .int_n(int_n),
+    .op_state(op_state)
 );
 
 endmodule
