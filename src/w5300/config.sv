@@ -86,7 +86,7 @@ always_comb begin : CommonRegisters
         4'hb: {addr, wr_data} <= {WR, TMS01R, {8'd8, 8'd0}}; // socket 0 Tx buffer: 8kB
         4'hc: {addr, wr_data} <= {WR, RMS01R, {8'd4, 8'd0}}; // socket 0 Rx buffer: 4kB
         default:
-            {addr, wr_data} <= {RD, 10'h00, 16'h000};
+            {addr, wr_data} <= {RD, 10'h3fe, 16'h000};
     endcase
 end
 
@@ -127,10 +127,10 @@ localparam IMR   = get_socket_n_reg(.baseAddr(Sn_IMR), .socketN(N));
 localparam SSR   = get_socket_n_reg(.baseAddr(Sn_SSR), .socketN(N));
 localparam PORTR = get_socket_n_reg(.baseAddr(Sn_PORTR), .socketN(N));
 localparam KPALVTR_PROTOR = get_socket_n_reg(.baseAddr(Sn_KPALVTR_PROTOR), .socketN(N));
-localparam OP_CNT         = 4'd6;
-localparam OP_TIMEOUT     = 16'd100;
+localparam OP_CNT         = 4'd5;
+localparam OP_TIMEOUT     = 16'd50;
 
-logic [3 :0] init_tcp_op_cnt;
+logic [3 :0] op_cnt;
 logic [15:0] tick_cnt;              // Wait SSR timeout
 logic tick_cnt_rst_n;
 logic tick_overflow_flag;
@@ -151,8 +151,8 @@ always_comb begin
     else begin
         case (state_c)
             Initial:       state_n <= (enable & op_state) ? InitTcpParams : Initial;
-            InitTcpParams: state_n <= (init_tcp_op_cnt == OP_CNT) ? WaitSockInit : InitTcpParams;
-            Listen:        state_n <= op_state ? WaitListen : Listen;
+            InitTcpParams: state_n <= (op_cnt == OP_CNT) ? WaitSockInit : InitTcpParams;
+            Listen:        state_n <= (op_cnt == 2'd3) ? WaitListen : Listen;
             SocketClose:   state_n <= op_state ? InitTcpParams : SocketClose;
             Done:          state_n <= Done;
             default:       state_n <= Initial;
@@ -181,13 +181,14 @@ end
 
 always_ff @(posedge clk, negedge rst_n) begin
     if (!rst_n) begin
-        {done, init_tcp_op_cnt} <= 5'd0;
+        {done, op_cnt} <= 5'd0;
     end
     else begin
         case (state_c)
-            InitTcpParams: init_tcp_op_cnt         <= init_tcp_op_cnt + (op_state ? 1'b1 : 1'b0);
-            Done:          done                    <= 1'b1;
-            default:       {done, init_tcp_op_cnt} <= 5'd0;
+            InitTcpParams: op_cnt         <= op_cnt + (op_state ? 1'b1 : 1'b0);
+            Listen:        op_cnt         <= op_cnt + (op_state ? 1'b1 : 1'b0);
+            Done:          done           <= 1'b1;
+            default:       {done, op_cnt} <= 5'd0;
         endcase
     end
 end
@@ -195,7 +196,7 @@ end
 always_comb begin : BusLookUpTable
     case (state_c)
         InitTcpParams: begin
-            case (init_tcp_op_cnt)
+            case (op_cnt)
                 4'd0: {addr, wr_data} <= {WR, MR, Sn_MR_P_TCP};
                 4'd1: {addr, wr_data} <= {WR, PORTR, port};
                 4'd2: {addr, wr_data} <= {WR, IMR, Sn_IR_IMR_SENDOK |
@@ -206,7 +207,7 @@ always_comb begin : BusLookUpTable
                 4'd3: {addr, wr_data} <= {WR, KPALVTR_PROTOR, {8'd1, 8'd1}}; // KPALVTR = 1, Keep Alive Packet trasmission per 5s * KPLVTR
                 4'd4: {addr, wr_data} <= {WR, CR, Sn_CR_OPEN};
                 default:
-                    {addr, wr_data} <= {RD, 10'h000, 16'd0};
+                    {addr, wr_data} <= {RD, 10'h3fe, 16'd0};
             endcase
         end
 
@@ -215,7 +216,7 @@ always_comb begin : BusLookUpTable
         Listen:       {addr, wr_data} <= {WR, CR, Sn_CR_LISTEN};
         SocketClose:  {addr, wr_data} <= {WR, CR, Sn_CR_CLOSE};
         default:
-            {addr, wr_data} <= {RD, 10'h000, 16'd0};
+            {addr, wr_data} <= {RD, 10'h3fe, 16'd0};
     endcase
 end
 

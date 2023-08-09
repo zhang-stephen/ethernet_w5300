@@ -72,24 +72,8 @@ assign wr_n = (state_c == Write) ? 1'b0 : 1'b1;
 // bidirectional data bus controller
 assign data         = !wr_n ? data_out : {16{1'bz}};
 assign ctrl_rd_data = data_in;
-
-always_latch begin : DataOut
-    if (!rst_n) begin
-        data_out <= 16'd0;
-    end
-    else if (state_c == Write) begin
-        data_out <= ctrl_wr_data;
-    end
-end
-
-always_latch begin : DataIn
-    if (!rst_n) begin
-        data_in <= 16'd0;
-    end
-    else if (state_c == Read) begin
-        data_in <= data;
-    end
-end
+assign data_out     = (state_c == Write) ? ctrl_wr_data : 16'h0000;
+assign data_in      = (state_c == Read) ? data : 16'h0000;
 
 // internal tick timer controller
 always_ff @(posedge clk, negedge rst_n) begin : InternalTickTimer
