@@ -8,8 +8,8 @@ module w5300_driver_entry #(
     parameter logic [47:0] mac    = 48'h00_08_dc_01_02_03,
     parameter logic [7: 0] subnet = 8'd24,
     parameter logic CLK_FREQ      = 8'd100,
-    parameter logic ETH_TX_BUFFER_WIDTH = 16,
-    parameter logic ETH_RX_BUFFER_WIDTH = 16
+    parameter int ETH_TX_BUFFER_WIDTH = 16,
+    parameter int ETH_RX_BUFFER_WIDTH = 16
 )
 (
     input logic clk,
