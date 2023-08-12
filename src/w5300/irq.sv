@@ -45,7 +45,7 @@ always_comb begin
     end
     else begin
         case (state_c)
-            Idle:          state_n <= !int_n ? ReadCommonIr : Idle;
+            Idle:          state_n <= (!int_n && op_state) ? ReadCommonIr : Idle;
             ReadCommonIr:  state_n <= op_state ? ReadSocketIr : ReadCommonIr;
             ReadSocketIr:  state_n <= op_state ? ClearCommonIr : ReadSocketIr;
             ClearCommonIr: state_n <= op_state ? ClearSocketIr : ClearCommonIr;
@@ -73,7 +73,7 @@ always_comb begin
         ReadSocketIr:  {addr, wr_data} <= {RD, get_socket_n_reg(.baseAddr(Sn_IR), .socketN(socket)), 16'd0};
         ClearCommonIr: {addr, wr_data} <= {WR, IR, 16'hffff};
         ClearSocketIr: {addr, wr_data} <= {WR, get_socket_n_reg(.baseAddr(Sn_IR), .socketN(socket)), 16'hffff};
-        default:       {addr, wr_data} <= {RD, 10'h000, 16'd0};
+        default:       {addr, wr_data} <= {RD, 10'h3fe, 16'd0};
     endcase
 end
 
@@ -91,8 +91,6 @@ always_latch begin
             8'h20: socket <= {1'b1, Socket5};
             8'h40: socket <= {1'b1, Socket6};
             8'h80: socket <= {1'b1, Socket7};
-            default:
-                socket <= {1'b0, Socket0};
         endcase
     end
 end
