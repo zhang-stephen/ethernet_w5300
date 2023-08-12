@@ -40,7 +40,8 @@ enum bit [2:0]
     ReadTxBufferFreeSize,
     CheckTxBufferSize,
     WriteFifoReg,
-    DoSend
+    DoSend,
+    PostSend
 } state_c, state_n;
 
 logic [31:0] tx_data_size;
@@ -50,8 +51,9 @@ logic [2 :0] tx_cmd_cnt;
 logic w5300_tx_idle;
 logic tx_data_send_all;
 
-assign w5300_tx_idle = tx_buffer_free_size >= tx_data_size;
+assign w5300_tx_idle    = tx_buffer_free_size >= tx_data_size;
 assign tx_data_send_all = tx_cnt == tx_data_size;
+assign tx_done          = state_c == PostSend ? 1'b1 : 1'b0;
 
 always_ff @(posedge clk, negedge rst_n) begin
     if (!rst_n) begin
@@ -64,14 +66,14 @@ end
 
 always_comb begin
     case (state_c)
-        Idle:                 state_n <= eth_tx_req ? ReadTxDataSize0 : Idle;
-        ReadTxDataSize0:      state_n <= ReadTxDataSize1;
-        ReadTxDataSize1:      state_n <= ReadTxBufferFreeSize;
-        ReadTxBufferFreeSize: state_n <= tx_cmd_cnt >= TX_CMD_PRE_OP_NUM ? CheckTxBufferSize : ReadTxBufferFreeSize;
-        CheckTxBufferSize:    state_n <= w5300_tx_idle ? WriteFifoReg : ReadTxBufferFreeSize;
-        WriteFifoReg:         state_n <= tx_data_send_all ? DoSend : WriteFifoReg;
-        DoSend:               state_n <= tx_cmd_cnt >= TX_CMD_OP_NUM ? Idle : DoSend;
-        default:              state_n <= Idle;
+        Idle:                 state_n = eth_tx_req ? ReadTxDataSize0 : Idle;
+        ReadTxDataSize0:      state_n = ReadTxDataSize1;
+        ReadTxDataSize1:      state_n = ReadTxBufferFreeSize;
+        ReadTxBufferFreeSize: state_n = tx_cmd_cnt >= TX_CMD_PRE_OP_NUM ? CheckTxBufferSize : ReadTxBufferFreeSize;
+        CheckTxBufferSize:    state_n = w5300_tx_idle ? WriteFifoReg : ReadTxBufferFreeSize;
+        WriteFifoReg:         state_n = tx_data_send_all ? DoSend : WriteFifoReg;
+        DoSend:               state_n = tx_cmd_cnt >= TX_CMD_OP_NUM ? PostSend : DoSend;
+        default:              state_n = Idle;
     endcase
 end
 
@@ -80,7 +82,6 @@ always_ff @(posedge clk, negedge rst_n) begin
         tx_buffer_free_size <= 32'd0;
         tx_cnt              <= 32'd0;
         tx_cmd_cnt          <= 3'd0;
-        tx_done             <= 1'b0;
         eth_tx_buffer_addr  <= {ETH_TX_BUFFER_WIDTH{1'b0}};
     end
     else begin
@@ -89,7 +90,6 @@ always_ff @(posedge clk, negedge rst_n) begin
                 tx_buffer_free_size <= 32'd0;
                 tx_cnt              <= 32'd0;
                 tx_cmd_cnt          <= 3'd0;
-                tx_done             <= 1'b0;
                 eth_tx_buffer_addr  <= {ETH_TX_BUFFER_WIDTH{1'b0}};
             end
 
@@ -102,7 +102,7 @@ always_ff @(posedge clk, negedge rst_n) begin
             end
 
             WriteFifoReg: begin
-                eth_tx_buffer_addr <= eth_tx_buffer_addr + 1'b1;
+                eth_tx_buffer_addr <= eth_tx_buffer_addr + (op_state ? 1'b1 : 1'b0);
                 tx_cnt             <= tx_cnt + (op_state ? 1'b1 : 1'b0);
             end
 
@@ -116,26 +116,25 @@ end
 
 always_comb begin
     case (state_c)
-        WriteFifoReg: {addr, wr_data} <= {WR, FIFOR, eth_tx_buffer_data};
-        default:      {addr, wr_data} <= {RD, 10'h000, 16'h0000};
+        WriteFifoReg: {addr, wr_data} = {WR, FIFOR, eth_tx_buffer_data};
+        default:      {addr, wr_data} = {RD, 10'h000, 16'h0000};
 
         ReadTxBufferFreeSize: begin
             case (tx_cmd_cnt)
-                3'h0: {addr, wr_data} <= {RD, FSR0, 16'h0000};
-                3'h1: {addr, wr_data} <= {RD, FSR2, 16'h0000};
+                3'h0: {addr, wr_data} = {RD, FSR0, 16'h0000};
+                3'h1: {addr, wr_data} = {RD, FSR2, 16'h0000};
                 default:
-                    {addr, wr_data} <= {RD, FSR0, 16'h0000};
+                    {addr, wr_data} = {RD, FSR0, 16'h0000};
             endcase
         end
 
-
         DoSend: begin
             case (tx_cmd_cnt)
-                3'h0: {addr, wr_data} <= {WR, WRSR0, tx_data_size[31:16]};
-                3'h1: {addr, wr_data} <= {WR, WRSR2, tx_data_size[15: 0]};
-                3'h2: {addr, wr_data} <= {WR, CR, Sn_CR_SEND};
+                3'h0: {addr, wr_data} = {WR, WRSR0, tx_data_size[31:16]};
+                3'h1: {addr, wr_data} = {WR, WRSR2, tx_data_size[15: 0]};
+                3'h2: {addr, wr_data} = {WR, CR, Sn_CR_SEND};
                 default:
-                    {addr, wr_data} <= {RD, 10'h000, 16'h0000};
+                    {addr, wr_data} = {RD, 10'h000, 16'h0000};
             endcase
         end
     endcase
@@ -146,10 +145,10 @@ always_latch begin
         tx_data_size = 32'd0;
     end
     else if (state_c == ReadTxDataSize0) begin
-        tx_data_size[31:16] <= eth_tx_buffer_data;
+        tx_data_size[31:16] = eth_tx_buffer_data;
     end
     else if (state_c == ReadTxDataSize1) begin
-        tx_data_size[15: 0] <= eth_tx_buffer_data;
+        tx_data_size[15: 0] = eth_tx_buffer_data;
     end
 end
 

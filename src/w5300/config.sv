@@ -130,10 +130,16 @@ localparam KPALVTR_PROTOR = get_socket_n_reg(.baseAddr(Sn_KPALVTR_PROTOR), .sock
 localparam OP_CNT         = 4'd5;
 localparam OP_TIMEOUT     = 16'd50;
 
+logic sock_init_flag;
+logic sock_listen_flag;
+
 logic [3 :0] op_cnt;
 logic [15:0] tick_cnt;              // Wait SSR timeout
 logic tick_cnt_rst_n;
 logic tick_overflow_flag;
+
+assign sock_init_flag   = rd_data[7:0] == Sn_SSR_SOCK_INIT[7:0];
+assign sock_listen_flag = rd_data[7:0] == Sn_SSR_SOCK_LISTEN[7:0];
 
 always_ff @(posedge clk, negedge rst_n) begin
     if (!rst_n) begin
@@ -162,7 +168,7 @@ always_comb begin
                     state_n = SocketClose;
                 end
                 else begin
-                    state_n = (rd_data[7:0] == Sn_SSR_SOCK_INIT[7:0]) ? Listen : WaitSockInit;
+                    state_n = (sock_init_flag && op_state) ? Listen : WaitSockInit;
                 end
             end
 
@@ -171,7 +177,7 @@ always_comb begin
                     state_n = SocketClose;
                 end
                 else begin
-                    state_n = (rd_data[7:0] == Sn_SSR_SOCK_LISTEN[7:0]) ? Done : WaitListen;
+                    state_n = (sock_listen_flag && op_state) ? Done : WaitListen;
                 end
             end
 
@@ -197,13 +203,13 @@ always_comb begin : BusLookUpTable
     case (state_c)
         InitTcpParams: begin
             case (op_cnt)
-                4'd0: {addr, wr_data} = {WR, MR, Sn_MR_P_TCP};
+                4'd0: {addr, wr_data} = {WR, MR, Sn_MR_NO_DELAY_ACK | Sn_MR_P_TCP};
                 4'd1: {addr, wr_data} = {WR, PORTR, port};
                 4'd2: {addr, wr_data} = {WR, IMR, Sn_IR_IMR_SENDOK |
-                                                   Sn_IR_IMR_TIMEOUT |
-                                                   Sn_IR_IMR_RECV |
-                                                   Sn_IR_IMR_DISCONNECT |
-                                                   Sn_IR_IMR_CONNECT};
+                                                  Sn_IR_IMR_TIMEOUT |
+                                                  Sn_IR_IMR_RECV |
+                                                  Sn_IR_IMR_DISCONNECT |
+                                                  Sn_IR_IMR_CONNECT};
                 4'd3: {addr, wr_data} = {WR, KPALVTR_PROTOR, {8'd1, 8'd1}}; // KPALVTR = 1, Keep Alive Packet trasmission per 5s * KPLVTR
                 4'd4: {addr, wr_data} = {WR, CR, Sn_CR_OPEN};
                 default:
