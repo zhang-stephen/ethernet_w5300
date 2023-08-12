@@ -21,7 +21,7 @@ module w5300_common_reg_conf #(
 import W5300::*;
 import network::*;
 
-localparam NUM_OF_OPERATIONS = 8'd14;
+localparam NUM_OF_OPERATIONS = 8'd13;
 localparam GATEWAY = calc_gateway(ip);
 localparam SUBNET  = {32{1'b1}} ^ {(32 - subnet){1'b1}};
 
@@ -49,7 +49,7 @@ always_comb begin
     else begin
         case (state_c)
             Initial:   state_n <= enable ? Operating : Initial;
-            Operating: state_n <= op_cnt == NUM_OF_OPERATIONS ? Done : Operating;
+            Operating: state_n <= op_cnt >= NUM_OF_OPERATIONS ? Done : Operating;
             Done:      state_n <= Done;
             default:   state_n <= Initial;
         endcase
@@ -72,21 +72,21 @@ end
 
 always_comb begin : CommonRegisters
     case (op_cnt)
-        4'h0: {addr, wr_data} <= {WR, MR, MR_DBW | MR_WDF};
-        4'h1: {addr, wr_data} <= {WR, IMR, IR_IMR_IPCF | IR_IMR_DPUR | IR_IMR_S0};
-        4'h2: {addr, wr_data} <= {WR, SHAR0, mac[47:32]};
-        4'h3: {addr, wr_data} <= {WR, SHAR2, mac[31:16]};
-        4'h4: {addr, wr_data} <= {WR, SHAR4, mac[15: 0]};
-        4'h5: {addr, wr_data} <= {WR, SUBR0, SUBNET[31:16]};
-        4'h6: {addr, wr_data} <= {WR, SUBR2, SUBNET[15: 0]};
-        4'h7: {addr, wr_data} <= {WR, SIPR0, ip[31:16]};
-        4'h8: {addr, wr_data} <= {WR, SIPR2, ip[15: 0]};
-        4'h9: {addr, wr_data} <= {WR, RTR, 16'hfa0};         // 400ms = 0x0fa0 * 100us
-        4'ha: {addr, wr_data} <= {WR, RCR, 16'd7};           // retransmission count = 8 = RCR + 1
-        4'hb: {addr, wr_data} <= {WR, TMS01R, {8'd8, 8'd0}}; // socket 0 Tx buffer: 8kB
-        4'hc: {addr, wr_data} <= {WR, RMS01R, {8'd4, 8'd0}}; // socket 0 Rx buffer: 4kB
+        4'h0: {addr, wr_data} = {WR, MR, MR_DBW};
+        4'h1: {addr, wr_data} = {WR, IMR, IR_IMR_IPCF | IR_IMR_DPUR | IR_IMR_S0};
+        4'h2: {addr, wr_data} = {WR, SHAR0, mac[47:32]};
+        4'h3: {addr, wr_data} = {WR, SHAR2, mac[31:16]};
+        4'h4: {addr, wr_data} = {WR, SHAR4, mac[15: 0]};
+        4'h5: {addr, wr_data} = {WR, SUBR0, SUBNET[31:16]};
+        4'h6: {addr, wr_data} = {WR, SUBR2, SUBNET[15: 0]};
+        4'h7: {addr, wr_data} = {WR, SIPR0, ip[31:16]};
+        4'h8: {addr, wr_data} = {WR, SIPR2, ip[15: 0]};
+        4'h9: {addr, wr_data} = {WR, RTR, 16'hfa0};         // 400ms = 0x0fa0 * 100us
+        4'ha: {addr, wr_data} = {WR, RCR, 16'd7};           // retransmission count = 8 = RCR + 1
+        4'hb: {addr, wr_data} = {WR, TMS01R, {8'd8, 8'd0}}; // socket 0 Tx buffer: 8kB
+        4'hc: {addr, wr_data} = {WR, RMS01R, {8'd4, 8'd0}}; // socket 0 Rx buffer: 4kB
         default:
-            {addr, wr_data} <= {RD, 10'h3fe, 16'h000};
+            {addr, wr_data} = {RD, 10'h3fe, 16'h000};
     endcase
 end
 
@@ -150,28 +150,28 @@ always_comb begin
     end
     else begin
         case (state_c)
-            Initial:       state_n <= (enable & op_state) ? InitTcpParams : Initial;
-            InitTcpParams: state_n <= (op_cnt == OP_CNT) ? WaitSockInit : InitTcpParams;
-            Listen:        state_n <= (op_cnt == 2'd3) ? WaitListen : Listen;
-            SocketClose:   state_n <= op_state ? InitTcpParams : SocketClose;
-            Done:          state_n <= Done;
-            default:       state_n <= Initial;
+            Initial:       state_n = (enable & op_state) ? InitTcpParams : Initial;
+            InitTcpParams: state_n = (op_cnt == OP_CNT) ? WaitSockInit : InitTcpParams;
+            Listen:        state_n = (op_cnt == 2'd3) ? WaitListen : Listen;
+            SocketClose:   state_n = op_state ? InitTcpParams : SocketClose;
+            Done:          state_n = Done;
+            default:       state_n = Initial;
 
             WaitSockInit : begin
                 if (tick_overflow_flag) begin
-                    state_n <= SocketClose;
+                    state_n = SocketClose;
                 end
                 else begin
-                    state_n <= (rd_data[7:0] == Sn_SSR_SOCK_INIT[7:0]) ? Listen : WaitSockInit;
+                    state_n = (rd_data[7:0] == Sn_SSR_SOCK_INIT[7:0]) ? Listen : WaitSockInit;
                 end
             end
 
             WaitListen: begin
                 if (tick_overflow_flag) begin
-                    state_n <= SocketClose;
+                    state_n = SocketClose;
                 end
                 else begin
-                    state_n <= (rd_data[7:0] == Sn_SSR_SOCK_LISTEN[7:0]) ? Done : WaitListen;
+                    state_n = (rd_data[7:0] == Sn_SSR_SOCK_LISTEN[7:0]) ? Done : WaitListen;
                 end
             end
 
@@ -197,26 +197,26 @@ always_comb begin : BusLookUpTable
     case (state_c)
         InitTcpParams: begin
             case (op_cnt)
-                4'd0: {addr, wr_data} <= {WR, MR, Sn_MR_P_TCP};
-                4'd1: {addr, wr_data} <= {WR, PORTR, port};
-                4'd2: {addr, wr_data} <= {WR, IMR, Sn_IR_IMR_SENDOK |
+                4'd0: {addr, wr_data} = {WR, MR, Sn_MR_P_TCP};
+                4'd1: {addr, wr_data} = {WR, PORTR, port};
+                4'd2: {addr, wr_data} = {WR, IMR, Sn_IR_IMR_SENDOK |
                                                    Sn_IR_IMR_TIMEOUT |
                                                    Sn_IR_IMR_RECV |
                                                    Sn_IR_IMR_DISCONNECT |
                                                    Sn_IR_IMR_CONNECT};
-                4'd3: {addr, wr_data} <= {WR, KPALVTR_PROTOR, {8'd1, 8'd1}}; // KPALVTR = 1, Keep Alive Packet trasmission per 5s * KPLVTR
-                4'd4: {addr, wr_data} <= {WR, CR, Sn_CR_OPEN};
+                4'd3: {addr, wr_data} = {WR, KPALVTR_PROTOR, {8'd1, 8'd1}}; // KPALVTR = 1, Keep Alive Packet trasmission per 5s * KPLVTR
+                4'd4: {addr, wr_data} = {WR, CR, Sn_CR_OPEN};
                 default:
-                    {addr, wr_data} <= {RD, 10'h3fe, 16'd0};
+                    {addr, wr_data} = {RD, 10'h3fe, 16'd0};
             endcase
         end
 
-        WaitListen:   {addr, wr_data} <= {RD, SSR, 16'd0};
-        WaitSockInit: {addr, wr_data} <= {RD, SSR, 16'd0};
-        Listen:       {addr, wr_data} <= {WR, CR, Sn_CR_LISTEN};
-        SocketClose:  {addr, wr_data} <= {WR, CR, Sn_CR_CLOSE};
+        WaitListen:   {addr, wr_data} = {RD, SSR, 16'd0};
+        WaitSockInit: {addr, wr_data} = {RD, SSR, 16'd0};
+        Listen:       {addr, wr_data} = {WR, CR, Sn_CR_LISTEN};
+        SocketClose:  {addr, wr_data} = {WR, CR, Sn_CR_CLOSE};
         default:
-            {addr, wr_data} <= {RD, 10'h3fe, 16'd0};
+            {addr, wr_data} = {RD, 10'h3fe, 16'd0};
     endcase
 end
 
@@ -237,9 +237,9 @@ end
 
 always_comb begin
     case (state_c)
-        WaitSockInit: tick_cnt_rst_n <= tick_overflow_flag ? 1'b0 : 1'b1;
-        WaitListen:   tick_cnt_rst_n <= tick_overflow_flag ? 1'b0 : 1'b1;
-        default:      tick_cnt_rst_n <= 1'b0;
+        WaitSockInit: tick_cnt_rst_n = tick_overflow_flag ? 1'b0 : 1'b1;
+        WaitListen:   tick_cnt_rst_n = tick_overflow_flag ? 1'b0 : 1'b1;
+        default:      tick_cnt_rst_n = 1'b0;
     endcase
 end
 

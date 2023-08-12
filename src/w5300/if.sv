@@ -34,14 +34,13 @@ enum bit [2:0] {
     ResetPhase1,
     ResetPhase2,
     Idle,
-    Write,
-    Read
+    ReadWrite
 } state_c, state_n;
 
 // constants
 localparam RST_P1_TICKS = 200 * CLK_FREQ / CLK_REF;         // 2us
 localparam RST_P2_TICKS = 5000 * CLK_FREQ / CLK_REF;        // 50us
-localparam DATA_SETUP_TICKS = 5 * CLK_FREQ / CLK_REF;       // 0.05us
+localparam DATA_SETUP_TICKS = 7 * CLK_FREQ / CLK_REF;       // 0.07us
 
 // signals
 bit [15:0] data_out;    // bidirectional unpacked
@@ -65,15 +64,13 @@ assign ctrl_op_state = (state_c == Idle) ? 1'b1 : 1'b0;
 
 // w5300 chip control signals
 assign w_rst_n = (state_c == ResetPhase1) ? 1'b0 : 1'b1;
-assign cs_n = (state_c == Read || state_c == Write) ? 1'b0 : 1'b1;
-assign rd_n = (state_c == Read) ? 1'b0 : 1'b1;
-assign wr_n = (state_c == Write) ? 1'b0 : 1'b1;
+assign cs_n = (state_c == ReadWrite) ? 1'b0 : 1'b1;
+assign rd_n = (addr_op == RD) ? 1'b0 : 1'b1;
+assign wr_n = (addr_op == WR) ? 1'b0 : 1'b1;
 
 // bidirectional data bus controller
-assign data         = !wr_n ? data_out : {16{1'bz}};
-assign ctrl_rd_data = data_in;
-assign data_out     = (state_c == Write) ? ctrl_wr_data : 16'h0000;
-assign data_in      = (state_c == Read) ? data : 16'h0000;
+assign data         = !wr_n ? ctrl_wr_data : {16{1'bz}};
+assign ctrl_rd_data = !rd_n ? data : 16'h0000;
 
 // internal tick timer controller
 always_ff @(posedge clk, negedge rst_n) begin : InternalTickTimer
@@ -94,11 +91,10 @@ assign data_setup_flag = (tick_cnt >= DATA_SETUP_TICKS) ? 1'b1 : 1'b0;
 
 always_comb begin
     case (state_c)
-        ResetPhase1: tick_cnt_rst_n <= rst_p1_cplt ? 1'b0 : 1'b1;
-        ResetPhase2: tick_cnt_rst_n <= rst_p2_cplt ? 1'b0 : 1'b1;
-        Write:       tick_cnt_rst_n <= data_setup_flag ? 1'b0 : 1'b1;
-        Read:        tick_cnt_rst_n <= data_setup_flag ? 1'b0 : 1'b1;
-        default:     tick_cnt_rst_n <= 1'b0;
+        ResetPhase1: tick_cnt_rst_n = rst_p1_cplt ? 1'b0 : 1'b1;
+        ResetPhase2: tick_cnt_rst_n = rst_p2_cplt ? 1'b0 : 1'b1;
+        ReadWrite:   tick_cnt_rst_n = data_setup_flag ? 1'b0 : 1'b1;
+        default:     tick_cnt_rst_n = 1'b0;
     endcase
 end
 
@@ -112,13 +108,12 @@ end
 
 always_comb begin
     case (state_c)
-        PowerOn:     state_n <= ResetPhase1;
-        ResetPhase1: state_n <= rst_p1_cplt ? ResetPhase2 : ResetPhase1;
-        ResetPhase2: state_n <= rst_p2_cplt ? Idle : ResetPhase2;
-        Idle:        state_n <= addr_op == WR ? Write : Read;
-        Write:       state_n <= data_setup_flag ? Idle : Write;
-        Read:        state_n <= data_setup_flag ? Idle : Read;
-        default:     state_n <= PowerOn;
+        PowerOn:     state_n = ResetPhase1;
+        ResetPhase1: state_n = rst_p1_cplt ? ResetPhase2 : ResetPhase1;
+        ResetPhase2: state_n = rst_p2_cplt ? Idle : ResetPhase2;
+        Idle:        state_n = ReadWrite;
+        ReadWrite:   state_n = data_setup_flag ? Idle : ReadWrite;
+        default:     state_n = PowerOn;
     endcase
 end
 

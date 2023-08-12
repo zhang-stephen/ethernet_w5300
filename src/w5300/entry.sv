@@ -7,7 +7,7 @@ module w5300_driver_entry #(
     parameter logic [15:0] port   = 16'd7000,
     parameter logic [47:0] mac    = 48'h00_08_dc_01_02_03,
     parameter logic [7: 0] subnet = 8'd24,
-    parameter logic CLK_FREQ      = 8'd100,
+    parameter int CLK_FREQ      = 8'd100,
     parameter int ETH_TX_BUFFER_WIDTH = 16,
     parameter int ETH_RX_BUFFER_WIDTH = 16
 )
@@ -66,13 +66,13 @@ logic [4:0] irq_socket_state;
 
 always_comb begin : BusSwitcher
     case (state_c)
-        ConfigCommon: {if_wr_data, if_addr} <= {common_config_wr_data, common_config_addr};
-        ConfigSocket: {if_wr_data, if_addr} <= {socket_config_wr_data, socket_config_addr};
-        HandShake:    {if_wr_data, if_addr} <= {16'd0, RD, IDR};
-        IrqHandle:    {if_wr_data, if_addr} <= {irq_handler_wr_data, irq_handler_addr};
-        Transmitting: {if_wr_data, if_addr} <= {eth_tx_wr_data, eth_tx_addr};
-        Receiving:    {if_wr_data, if_addr} <= {eth_rx_wr_data, eth_rx_addr};
-        default:      {if_wr_data, if_addr} <= {16'd0, RD, 10'h000};
+        ConfigCommon: {if_wr_data, if_addr} = {common_config_wr_data, common_config_addr};
+        ConfigSocket: {if_wr_data, if_addr} = {socket_config_wr_data, socket_config_addr};
+        HandShake:    {if_wr_data, if_addr} = {16'd0, RD, IDR};
+        IrqHandle:    {if_wr_data, if_addr} = {irq_handler_wr_data, irq_handler_addr};
+        Transmitting: {if_wr_data, if_addr} = {eth_tx_wr_data, eth_tx_addr};
+        Receiving:    {if_wr_data, if_addr} = {eth_rx_wr_data, eth_rx_addr};
+        default:      {if_wr_data, if_addr} = {16'd0, RD, 10'h3fe};
     endcase
 end
 
@@ -92,36 +92,36 @@ end
 
 always_comb begin
     if (!rst_n) begin
-        state_n <= Initial;
+        state_n = Initial;
     end
     else begin
         case (state_c)
-            Initial:      state_n <= if_op_state ? ConfigCommon : Initial;
-            ConfigCommon: state_n <= common_config_done ? HandShake : ConfigCommon;
-            HandShake:    state_n <= (if_rd_data == IDR_ID) ? ConfigSocket : HandShake;
-            ConfigSocket: state_n <= socket_config_done ? Idle : ConfigSocket;
+            Initial:      state_n = if_op_state ? ConfigCommon : Initial;
+            ConfigCommon: state_n = common_config_done ? HandShake : ConfigCommon;
+            HandShake:    state_n = (if_rd_data == IDR_ID) ? ConfigSocket : HandShake;
+            ConfigSocket: state_n = socket_config_done ? Idle : ConfigSocket;
             Idle: begin
                 if (!eth_tx_req) begin
-                    state_n <= Transmitting;
+                    state_n = Transmitting;
                 end
                 else if (!int_n) begin
-                    state_n <= IrqHandle;
+                    state_n = IrqHandle;
                 end
                 else begin
-                    state_n <= Idle;
+                    state_n = Idle;
                 end
             end
 
             IrqHandle: begin
-                if (!irq_clear) begin
-                    state_n <= IrqHandle;
+                if (!int_n) begin
+                    state_n = IrqHandle;
                 end
                 else begin
-                    state_n <= Idle;
+                    state_n = Idle;
                 end
             end
 
-            default: state_n <= Initial;
+            default: state_n = Initial;
         endcase
     end
 end
@@ -191,6 +191,21 @@ w5300_irq_handler w5300_irq_handler_inst(
     .ir_state({irq_common_state, irq_socket_state}),
     .socket({irq_on_socket, irq_socket}),
     .int_n(int_n),
+    .op_state(if_op_state)
+);
+
+w5300_transmitter #(
+    .N(0),
+    .ETH_TX_BUFFER_WIDTH(ETH_TX_BUFFER_WIDTH)
+) w5300_transmitter_inst(
+    .clk(clk),
+    .rst_n(rst_n),
+    .eth_tx_req(eth_tx_req),
+    .eth_tx_buffer_data(eth_tx_buffer_data),
+    .eth_tx_buffer_addr(eth_tx_buffer_addr),
+    .addr(eth_tx_addr),
+    .wr_data(eth_tx_wr_data),
+    .rd_data(if_rd_data),
     .op_state(if_op_state)
 );
 

@@ -33,7 +33,7 @@ assign rw_n = wr_n;
 
 // w5300 driver instance
 w5300_driver_entry #(
-    .ip({8'd192, 8'd168, 8'd1, 8'd111}),
+    .ip({8'd192, 8'd168, 8'd22, 8'd111}),
     .port(16'd6588),
     .mac(48'h00_08_dc_ab_cd_ef),
     .subnet(8'd24),
