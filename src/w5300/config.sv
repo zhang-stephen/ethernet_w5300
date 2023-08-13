@@ -83,8 +83,10 @@ always_comb begin : CommonRegisters
         4'h8: {addr, wr_data} = {WR, SIPR2, ip[15: 0]};
         4'h9: {addr, wr_data} = {WR, RTR, 16'hfa0};         // 400ms = 0x0fa0 * 100us
         4'ha: {addr, wr_data} = {WR, RCR, 16'd7};           // retransmission count = 8 = RCR + 1
-        4'hb: {addr, wr_data} = {WR, TMS01R, {8'd8, 8'd0}}; // socket 0 Tx buffer: 8kB
-        4'hc: {addr, wr_data} = {WR, RMS01R, {8'd4, 8'd0}}; // socket 0 Rx buffer: 4kB
+        // FIXME: keep TMSR/RMSR default for correct receiving
+        // see https://forum.wiznet.io/t/topic/11466
+        // 4'hb: {addr, wr_data} = {WR, TMS01R, {8'd8, 8'd0}}; // socket 0 Tx buffer: 8kB
+        // 4'hc: {addr, wr_data} = {WR, RMS01R, {8'd4, 8'd0}}; // socket 0 Rx buffer: 4kB
         default:
             {addr, wr_data} = {RD, 10'h3fe, 16'h000};
     endcase

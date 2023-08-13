@@ -15,7 +15,7 @@ module w5300_receiver #(
     output logic [ETH_RX_BUFFER_WIDTH - 1:0] eth_rx_buffer_addr,
     output logic rx_done,
 
-    output logic [9 :0] addr,
+    output logic [10:0] addr,
     output logic [15:0] wr_data,
     input  logic [15:0] rd_data,
     input  logic op_state
@@ -92,6 +92,7 @@ end
 always_comb begin
     case (state_c)
         ReadRxFifoReg, ReadRxDataSize:
+        // if Sn_MR_ALIGN not configured, the Rx data size should be read from Sn_RX_FIFOR
             {addr, wr_data} = {RD, FIFOR, 16'h0000};
         DoRecv:
             {addr, wr_data} = {WR, CR, Sn_CR_RECEIVE};

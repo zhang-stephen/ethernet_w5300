@@ -25,6 +25,7 @@ localparam int BUFFER_ADDR_WIDTH = 9;
 
 logic clk100m, clk200m;
 logic eth_tx_req, eth_rx_req;
+logic eth_op_state;
 logic [BUFFER_ADDR_WIDTH - 1:0] eth_tx_buffer_addr;
 logic [BUFFER_ADDR_WIDTH - 1:0] eth_rx_buffer_addr;
 logic [15:0] eth_tx_buffer_data, eth_rx_buffer_data;
@@ -55,7 +56,8 @@ w5300_driver_entry #(
     .eth_tx_buffer_data(eth_tx_buffer_data),
     .eth_rx_req(eth_rx_req),
     .eth_rx_buffer_addr(eth_rx_buffer_addr),
-    .eth_rx_buffer_data(eth_rx_buffer_data)
+    .eth_rx_buffer_data(eth_rx_buffer_data),
+    .eth_op_state(eth_op_state)
 );
 
 // IP cores from Intel Quartus
