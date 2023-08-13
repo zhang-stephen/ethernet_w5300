@@ -3,7 +3,7 @@
 // 2023-07-29
 
 module w5300_interface #(
-    parameter byte CLK_FREQ = 100
+    parameter int CLK_FREQ = 100
 )
 (
     input logic clk,

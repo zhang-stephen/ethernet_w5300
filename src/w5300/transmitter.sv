@@ -55,7 +55,7 @@ logic is_tx_bytes_odd;
 assign is_tx_bytes_odd  = eth_tx_bytes & 1'b1;
 assign tx_data_size     = (eth_tx_bytes + is_tx_bytes_odd) >> 1; // in 16-bit words
 assign w5300_tx_idle    = tx_buffer_free_size >= eth_tx_bytes;
-assign tx_data_send_all = tx_cnt == tx_data_size;
+assign tx_data_send_all = tx_cnt >= tx_data_size;
 assign tx_done          = state_c == PostSend ? 1'b1 : 1'b0;
 
 always_ff @(posedge clk, negedge rst_n) begin

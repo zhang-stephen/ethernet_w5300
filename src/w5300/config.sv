@@ -160,7 +160,7 @@ always_comb begin
     end
     else begin
         case (state_c)
-            Initial:       state_n = (enable & op_state) ? InitTcpParams : Initial;
+            Initial:       state_n = (enable & op_state) ? SocketClose: Initial;
             InitTcpParams: state_n = (op_cnt == OP_CNT) ? WaitSockInit : InitTcpParams;
             Listen:        state_n = (op_cnt == 2'd3) ? WaitListen : Listen;
             SocketClose:   state_n = op_state ? InitTcpParams : SocketClose;
