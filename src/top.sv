@@ -22,15 +22,79 @@ module top(
 );
 
 localparam int BUFFER_ADDR_WIDTH = 9;
+localparam int COMMAND_SEQ_LEN = 9; // 9 * 16-bit words
+localparam logic [15:0] COMMAND_SEQ [9]  = '{3{16'h3031, 16'h3130, 16'h3020}};
+
+enum bit [2:0] {
+    Idle,
+    Transmit,
+    Receive,
+    ReadRxBuffer
+}state_c, state_n;
 
 logic clk100m, clk200m;
 logic eth_tx_req, eth_rx_req;
 logic eth_op_state;
 logic [BUFFER_ADDR_WIDTH - 1:0] eth_tx_buffer_addr;
-logic [BUFFER_ADDR_WIDTH - 1:0] eth_rx_buffer_addr;
-logic [15:0] eth_tx_buffer_data, eth_rx_buffer_data;
+logic [BUFFER_ADDR_WIDTH - 1:0] eth_rx_buffer_addr, rx_rd_addr;
+logic [15:0] eth_tx_buffer_data, eth_rx_buffer_data, rx_rd_data;
+logic command_seq_received;
+logic [3:0] rx_rd_cnt;
 
-assign rw_n = wr_n;
+assign rw_n       = wr_n;
+assign eth_tx_req = state_c == Transmit ? 1'b0 : 1'b1;
+
+// w5300 control FSM
+always_ff @(posedge clk100m, negedge rst_n) begin
+    if (!rst_n) begin
+        state_c <= Idle;
+    end
+    else begin
+        state_c <= state_n;
+    end
+end
+
+always_comb begin
+    case (state_c)
+        Idle:     state_n = eth_rx_req ? Receive : Idle;
+        Receive:  state_n = eth_op_state ? ReadRxBuffer : Receive;
+        Transmit: state_n = !eth_op_state ? Idle : Transmit;
+        default:  state_n = Idle;
+        ReadRxBuffer:
+            state_n = rx_rd_cnt == COMMAND_SEQ_LEN ? Transmit : ReadRxBuffer;
+        // ReadRxBuffer: begin
+        //     if (rx_rd_cnt == COMMAND_SEQ_LEN) begin
+        //         state_n = command_seq_received ? Transmit : Idle;
+        //     end
+        //     else begin
+        //         state_n = ReadRxBuffer;
+        //     end
+        // end
+    endcase
+end
+
+always_ff @(posedge clk100m, negedge rst_n) begin
+    if (!rst_n) begin
+        command_seq_received <= 1'b0;
+        rx_rd_cnt            <= 4'd0;
+        rx_rd_addr           <= {BUFFER_ADDR_WIDTH{1'b0}};
+    end
+    else begin
+        case (state_c)
+            Idle: begin
+                command_seq_received <= 1'b0;
+                rx_rd_cnt            <= 4'd0;
+                rx_rd_addr           <= {BUFFER_ADDR_WIDTH{1'b0}};
+            end
+
+            ReadRxBuffer: begin
+                command_seq_received <= rx_rd_data == COMMAND_SEQ[rx_rd_cnt];
+                rx_rd_cnt            <= rx_rd_cnt + 1'b1;
+                rx_rd_addr           <= rx_rd_addr + 1'b1;
+            end
+        endcase
+    end
+end
 
 // w5300 driver instance
 w5300_driver_entry #(
@@ -51,10 +115,12 @@ w5300_driver_entry #(
     .int_n(int_n),
     .addr(addr),
     .data(data),
-    .eth_tx_req(1'b1),
+    .eth_tx_req(eth_tx_req),
+    .eth_tx_bytes(17'd400),
     .eth_tx_buffer_addr(eth_tx_buffer_addr),
     .eth_tx_buffer_data(eth_tx_buffer_data),
     .eth_rx_req(eth_rx_req),
+    .eth_rx_bytes(),
     .eth_rx_buffer_addr(eth_rx_buffer_addr),
     .eth_rx_buffer_data(eth_rx_buffer_data),
     .eth_op_state(eth_op_state)
@@ -78,8 +144,8 @@ ram ethernet_rx_buffer(
     .wren(eth_rx_req),
     .wraddress(eth_rx_buffer_addr),
     .data(eth_rx_buffer_data),
-    .rdaddress(),
-    .q()
+    .rdaddress(rx_rd_addr),
+    .q(rx_rd_data)
 );
 
 endmodule

@@ -11,6 +11,7 @@ module w5300_receiver #(
 
     input  logic rx_irq,
     output logic eth_rx_req,
+    output logic [15:0] eth_rx_bytes,
     output logic [15:0] eth_rx_buffer_data,
     output logic [ETH_RX_BUFFER_WIDTH - 1:0] eth_rx_buffer_addr,
     output logic rx_done,
@@ -37,12 +38,11 @@ enum bit [2:0] {
     PostRecv
 }state_c, state_n;
 
-logic [15:0] rx_data_size_in_bytes;
 logic [15:0] rx_data_size_in_16b;
 logic [15:0] rx_cnt;
 logic is_rx_bytes_odd;
 
-assign is_rx_bytes_odd    = rx_data_size_in_bytes & 16'h0001;
+assign is_rx_bytes_odd    = eth_rx_bytes & 16'h0001;
 assign eth_rx_req         = (state_c == ReadRxFifoReg) ? 1'b1 : 1'b0;
 assign eth_rx_buffer_data = rd_data;
 assign rx_done            = state_c == PostRecv;
@@ -69,15 +69,15 @@ end
 
 always_ff @(posedge clk, negedge rst_n) begin
     if (!rst_n) begin
-        {rx_data_size_in_bytes, rx_data_size_in_16b, rx_cnt} <= 48'd0;
+        {eth_rx_bytes, rx_data_size_in_16b, rx_cnt} <= 48'd0;
         eth_rx_buffer_addr <= {ETH_RX_BUFFER_WIDTH{1'b0}};
     end
     else begin
         case (state_c)
-            ReadRxDataSize:  rx_data_size_in_bytes <= rd_data;
-            CalcRxReadTimes: rx_data_size_in_16b   <= (rx_data_size_in_bytes + is_rx_bytes_odd) >> 1;
-            Idle:            begin
-                {rx_data_size_in_bytes, rx_data_size_in_16b, rx_cnt} <= 48'd0;
+            ReadRxDataSize:  eth_rx_bytes        <= rd_data;
+            CalcRxReadTimes: rx_data_size_in_16b <= (eth_rx_bytes + is_rx_bytes_odd) >> 1;
+            Idle: begin
+                {eth_rx_bytes, rx_data_size_in_16b, rx_cnt} <= 48'd0;
                 eth_rx_buffer_addr <= {ETH_RX_BUFFER_WIDTH{1'b0}};
             end
             ReadRxFifoReg: begin

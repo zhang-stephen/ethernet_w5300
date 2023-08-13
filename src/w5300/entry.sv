@@ -26,9 +26,11 @@ module w5300_driver_entry #(
 
     // dataflow ports
     input  logic eth_tx_req,
+    input  logic [16:0] eth_tx_bytes,
     output logic [ETH_TX_BUFFER_WIDTH - 1:0] eth_tx_buffer_addr,
     input  logic [15:0] eth_tx_buffer_data,
     output logic eth_rx_req,
+    output logic [16:0] eth_rx_bytes,
     output logic [ETH_RX_BUFFER_WIDTH - 1:0] eth_rx_buffer_addr,
     output logic [15:0] eth_rx_buffer_data,
     output logic eth_op_state
@@ -218,6 +220,7 @@ w5300_transmitter #(
     .clk(clk),
     .rst_n(rst_n),
     .eth_tx_req(eth_tx_req),
+    .eth_tx_bytes(eth_tx_bytes),
     .eth_tx_buffer_data(eth_tx_buffer_data),
     .eth_tx_buffer_addr(eth_tx_buffer_addr),
     .tx_done(eth_tx_done),
@@ -235,6 +238,7 @@ w5300_receiver #(
     .rst_n(rst_n),
     .rx_irq(eth_rx_enable),
     .eth_rx_req(eth_rx_req),
+    .eth_rx_bytes(eth_rx_bytes),
     .eth_rx_buffer_data(eth_rx_buffer_data),
     .eth_rx_buffer_addr(eth_rx_buffer_addr),
     .rx_done(eth_rx_done),
