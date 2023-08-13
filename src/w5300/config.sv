@@ -150,6 +150,8 @@ always_ff @(posedge clk, negedge rst_n) begin
     end
 end
 
+assign done = (state_c == Done) ? 1'b1 : 1'b0;
+
 always_comb begin
     if (!rst_n) begin
         state_n <= Initial;
@@ -160,7 +162,7 @@ always_comb begin
             InitTcpParams: state_n = (op_cnt == OP_CNT) ? WaitSockInit : InitTcpParams;
             Listen:        state_n = (op_cnt == 2'd3) ? WaitListen : Listen;
             SocketClose:   state_n = op_state ? InitTcpParams : SocketClose;
-            Done:          state_n = Done;
+            // Done:          state_n = Initial;
             default:       state_n = Initial;
 
             WaitSockInit : begin
@@ -187,14 +189,13 @@ end
 
 always_ff @(posedge clk, negedge rst_n) begin
     if (!rst_n) begin
-        {done, op_cnt} <= 5'd0;
+        op_cnt <= 4'd0;
     end
     else begin
         case (state_c)
-            InitTcpParams: op_cnt         <= op_cnt + (op_state ? 1'b1 : 1'b0);
-            Listen:        op_cnt         <= op_cnt + (op_state ? 1'b1 : 1'b0);
-            Done:          done           <= 1'b1;
-            default:       {done, op_cnt} <= 5'd0;
+            InitTcpParams: op_cnt <= op_cnt + (op_state ? 1'b1 : 1'b0);
+            Listen:        op_cnt <= op_cnt + (op_state ? 1'b1 : 1'b0);
+            default:       op_cnt <= 4'd0;
         endcase
     end
 end

@@ -30,7 +30,8 @@ module w5300_driver_entry #(
     input  logic [15:0] eth_tx_buffer_data,
     output logic eth_rx_req,
     output logic [ETH_RX_BUFFER_WIDTH - 1:0] eth_rx_buffer_addr,
-    output logic [15:0] eth_rx_buffer_data
+    output logic [15:0] eth_rx_buffer_data,
+    output logic eth_op_state
 );
 
 import common::CLK_REF;
@@ -44,6 +45,7 @@ enum bit [3:0] {
     HandShake,
     ConfigSocket,
     Idle,
+    IrqRead,
     IrqHandle,
     Transmitting,
     Receiving,
@@ -63,20 +65,38 @@ logic irq_clear, irq_on_socket;
 logic [2:0] irq_socket;
 logic [2:0] irq_common_state;
 logic [4:0] irq_socket_state;
+logic irq_comm_ipcf, irq_comm_dpur, irq_comm_fmtu;
+logic irq_sock_sendok, irq_sock_recv, irq_sock_connected, irq_sock_disconnected, irq_sock_timeout;
+logic eth_tx_done, eth_rx_done;
+logic eth_rx_enable;
 
 always_comb begin : BusSwitcher
     case (state_c)
         ConfigCommon: {if_wr_data, if_addr} = {common_config_wr_data, common_config_addr};
         ConfigSocket: {if_wr_data, if_addr} = {socket_config_wr_data, socket_config_addr};
         HandShake:    {if_wr_data, if_addr} = {16'd0, RD, IDR};
-        IrqHandle:    {if_wr_data, if_addr} = {irq_handler_wr_data, irq_handler_addr};
+        IrqRead:      {if_wr_data, if_addr} = {irq_handler_wr_data, irq_handler_addr};
         Transmitting: {if_wr_data, if_addr} = {eth_tx_wr_data, eth_tx_addr};
         Receiving:    {if_wr_data, if_addr} = {eth_rx_wr_data, eth_rx_addr};
         default:      {if_wr_data, if_addr} = {16'd0, RD, 10'h3fe};
     endcase
 end
 
+// unpack common intterupt state
+assign irq_comm_ipcf = irq_common_state[2];
+assign irq_comm_dpur = irq_common_state[1];
+assign irq_comm_fmtu = irq_common_state[0];
+
+// unpack socket interrupt state
+assign irq_sock_sendok       = irq_socket_state[4];
+assign irq_sock_timeout      = irq_socket_state[3];
+assign irq_sock_recv         = irq_socket_state[2];
+assign irq_sock_disconnected = irq_socket_state[1];
+assign irq_sock_connected    = irq_socket_state[0];
+
 // control logic
+assign eth_op_state         = (state_c == Idle) ? 1'b1 : 1'b0;
+assign eth_rx_enable        = (state_c == Receiving) & irq_sock_recv;
 assign common_config_enable = (state_c == ConfigCommon) ? 1'b1 : 1'b0;
 assign socket_config_enable = (state_c == ConfigSocket) ? 1'b1 : 1'b0;
 
@@ -100,12 +120,17 @@ always_comb begin
             ConfigCommon: state_n = common_config_done ? HandShake : ConfigCommon;
             HandShake:    state_n = (if_rd_data == IDR_ID) ? ConfigSocket : HandShake;
             ConfigSocket: state_n = socket_config_done ? Idle : ConfigSocket;
+            IrqRead:      state_n = int_n ? IrqHandle :  IrqRead;
+            Receiving:    state_n = eth_rx_done ? Idle : Receiving;
+            Transmitting: state_n = eth_tx_done ? Idle : Transmitting;
+            default:      state_n = Initial;
+
             Idle: begin
-                if (!eth_tx_req) begin
-                    state_n = Transmitting;
+                if (!int_n) begin
+                    state_n = IrqRead;
                 end
-                else if (!int_n) begin
-                    state_n = IrqHandle;
+                else if (!eth_tx_req) begin
+                    state_n = Transmitting;
                 end
                 else begin
                     state_n = Idle;
@@ -113,27 +138,19 @@ always_comb begin
             end
 
             IrqHandle: begin
-                if (!int_n) begin
-                    state_n = IrqHandle;
+                if (irq_sock_disconnected || irq_sock_timeout) begin
+                    state_n = ConfigSocket;     // re-configure the socket for new client
+                end
+                else if (irq_sock_recv) begin
+                    state_n = Receiving;
                 end
                 else begin
-                    state_n = Idle;
+                    state_n = Idle;             // nothing to do for sendok/connected
                 end
             end
-
-            default: state_n = Initial;
         endcase
     end
 end
-
-// always_ff @(posedge clk, negedge rst_n) begin
-//     if (!rst_n) begin
-
-//     end
-//     else begin
-
-//     end
-// end
 
 // Submodules
 w5300_interface #(
@@ -203,8 +220,26 @@ w5300_transmitter #(
     .eth_tx_req(eth_tx_req),
     .eth_tx_buffer_data(eth_tx_buffer_data),
     .eth_tx_buffer_addr(eth_tx_buffer_addr),
+    .tx_done(eth_tx_done),
     .addr(eth_tx_addr),
     .wr_data(eth_tx_wr_data),
+    .rd_data(if_rd_data),
+    .op_state(if_op_state)
+);
+
+w5300_receiver #(
+    .N(0),
+    .ETH_RX_BUFFER_WIDTH(ETH_RX_BUFFER_WIDTH)
+) w5300_receiver_inst(
+    .clk(clk),
+    .rst_n(rst_n),
+    .rx_irq(eth_rx_enable),
+    .eth_rx_req(eth_rx_req),
+    .eth_rx_buffer_data(eth_rx_buffer_data),
+    .eth_rx_buffer_addr(eth_rx_buffer_addr),
+    .rx_done(eth_rx_done),
+    .addr(eth_rx_addr),
+    .wr_data(eth_rx_wr_data),
     .rd_data(if_rd_data),
     .op_state(if_op_state)
 );
