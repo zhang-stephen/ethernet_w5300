@@ -1,0 +1,8 @@
+@startuml w5300_config_common
+    [*] -> Initial
+    Initial -> Operating: enable && op_state
+    Operating -> Done: op_cnt = 13
+
+    Operating: write conmmon registers
+    Done: indicate configuration finished(active high)
+@enduml

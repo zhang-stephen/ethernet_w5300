@@ -1,0 +1,17 @@
+@startuml w5300_driver_entry
+    [*] --> Initial
+    Initial --> ConfigCommon: wait for w5300 reset
+    ConfigCommon --> Handshake: common_config_done
+    Handshake --> ConfigSocket: rd_data = 0x5300
+    ConfigSocket --> Idle: socket_config_done
+    Idle --> IrqRead: int_n active low
+    Idle -> Transmitting: eth_tx_req active low
+    IrqRead --> IrqHandle: int_n high
+    IrqHandle --> ConfigSocket: disconnect || timeout
+    IrqHandle -> Receving: recv
+    IrqHandle -> Idle: other interrupt occurs
+    Transmitting --> Idle: eth_tx_done
+    Receving --> Idle: eth_rx_done
+
+    Handshake: read IDR
+@enduml

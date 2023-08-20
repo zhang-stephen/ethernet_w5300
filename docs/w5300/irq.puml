@@ -1,0 +1,15 @@
+@startuml w5300_irq_handler
+    [*] -> Idle
+    Idle -> ReadCommonIr: int_n active low
+    ReadCommonIr --> ReadSocketIr
+    ReadSocketIr -->  ClearCommonIr
+    ClearCommonIr --> ClearSocketIr
+    ClearSocketIr --> Idle
+
+    Idle: clear active high
+    ReadCommonIr: read IR
+    ReadCommonIr: calculate which socket interrupted
+    ReadSocketIr: read Sn_IR
+    ClearCommonIr: write 0xffff to IR
+    ClearSocketIr: write 0xffff to Sn_IR
+@enduml

@@ -113,6 +113,66 @@ testbench | submodule
 `tb_transmitter.sv` | `tranmitter.sv`
 `tb_tick.sv` | `tick.sv`(*not used in the driver*)
 
+### Design
+
+**ALL figures could be found [docs](docs/).**
+
+There are several submodules under the `w5300_driver_entry`, and let's walk through how they finite state machines(FSMs) are designed in this section.
+
+The FSM in top module of this driver is following:
+
+![w5300 driver entry](https://cdn-0.plantuml.com/plantuml/png/RP51Qm8n48Nl_eev5mIXzB9G4UoXNcrlfOIGZ6vmCwcJsTM2FxxiH2MulIqpttilRtQLnRBqiOFJo_DYOJo70TaW2V_E002-dhvXFb_2Xe84s-di-gtpTQ9TsAzJZ8aQEDaWi4jSt80newYanbJtRiddrXwm0QTJunGnFX6gv4vKEH_97L0QO6-y5Gkli3YFIIgeaV9cts43MGUFzhei51-tQ7q3WSGGM2TXGEZIgSAMyCcMSWmYWVODeBH6peRnEE6BsyrvBD7XpRiD-rQfs-Q_RZvabuZG2Lmk825YwkLHjOGjEXpqCOnkcEvB-IGjyfYEpFsFG7AkvwnqtQWwLwbslrF9cI9yHPIfVYQFvJTlszaAoVUn-mC0)
+
+#### `w5300_interface`
+
+As well known, the physical interface of w5300 is SRAM-like async parallel interface, without clock.
+
+Its FSM is following(system reset would be ignored in others):
+
+![w5300 interface](https://cdn-0.plantuml.com/plantuml/png/VP11IyD048Nl-olUMGocbIBa8BrwidZnK4fOibEpa6naPcBmtvkOcauHSieottip7zcBUjQ-RJ3i7lEyZ4c9pxuYTxmx8Nl6eHk8NvExV96DipSIqaFjXJREl763jYY0mKV5kMDiUt6MZT6Nq12AQsINZvbfEE_nuPsZabjUo2ubqtdAaxXRXwjp0VaMfHOySNj-9JKTMC6BpKh6-XJpVmMBbWbHu2kDNuIc6wpGlrWTF-fVbpzIYG6BHR7CpLv3VGZy4Bnw26d_QH67CjrZuBdU9LJAJJaLZflyvFQKGjysxWS0)
+
+For the interface, the `ctrl_addr[10]` is an extended control bit, which is used to indicate this address should be read(0) or wroten(1). We would see its usage in the register look-up table of other submodules.
+
+#### `w5300_common_reg_conf`
+
+It's designed for configuring the common registers for w5300.
+
+There is a list of common registers should be configured in block `CommonRegisters` [here](src/w5300/config.sv) with their values. We could see the enabled common interrupt requests are IPCF(IP conflict), DPUR(Destinaton Port UnReachable with ICMP) and FMTU(Fragment MTU with ICMP), but their IRQ handlers are not implemented.
+
+![w5300 common config](https://cdn-0.plantuml.com/plantuml/png/LS_12i8m30RWUvyYfw62C1bU1ieENZpv02AZTbaNsDBHPkxrRK0HUsb9ln_-D4bib6KQOJrMPTcwm3tvV4rJO0Fvt7SFs9_XoYHaHnrztpg-pHYj4FiQaErpH2WA27ERn0eg_Wdbby1OwxzZWHCSAlDlQbWZ2O8Bh0KWegSa69EoJvgu8sT5aNPTD9bfJqnfm6vZdT0BOI0_R4s3tENjZ35l)
+
+#### `w5300_socket_n_tcp_server_conf`
+
+It's designed for initializing a socket as TCP server. And all registers with values could be find in the `SocketRegisterLut` block [here](src/w5300/config.sv).
+
+![w5300 socket n tcp server](https://cdn-0.plantuml.com/plantuml/png/VP51I_D048Rl-HLpAjyd529LX81Ig3qKYeefU2WbZ9jfEvZCbjr9wyytYzrOqs9EoSwJPzwP7Nj5fqrTmU5sbAQ5j-Q3j912pQxmvFRa2cDbdK3xBAzMC7o0cR0oLk4eliFmUBumknTqMFiCIF2z8XWCmBOgHQNkZuuAkZTapTkseP05reZ2FTm4-bSnm7FsIfA1AuiI5PTtMRfguVJpUdJEXr3XWtHIMKyPADTa6mtaqHG3H6_NFkfYwMzPZtkqGfSoVizqOe7-sfBp7MLmSAm4yMh0qIQqSlviuhOdOVb3vldhoQnHD9_bY-aJ65lNA6Kl_mL5FtJqJERF-VHKSvoRfMI3NUAMa3Ll6eVALc3DmdvBvJyqodk2BM-s_vCnITdKLP8aNm00)
+
+#### `w5300_irq_handler`
+
+It's designed for read interrupt requests for IRQ handlers from IR and Sn_IR when `int_n` active low, and clear the interrupt requests.
+
+There are several ports to indicate the interrupt status.
+
+`ir_state[7:0]` is used to indicate which interrupt(s) occurs. The definition of its bitfields are following:
+
+B7 | B6 | B5 | B4 | B3 | B2 | B1 | B0
+--- | --- | --- | --- | --- | --- | --- | ---
+IPCF | DPUR | FMTU | SOCK_SENDOK | SOCK_TIMEOUT | SOCK_RECV | SOCK_DISCON | SOCK_CON
+
+The first 3 bit are common interrupt requests and the others are socket interrupt requests.
+
+And there is another port, named as `socket[3:0]` to indicate which socket has the socket interrupts. If the `socket[3]` is low, there is no interrupt occured on socket.
+
+![w5300 irq handler](https://cdn-0.plantuml.com/plantuml/png/ROz1IyKm48Jl_eev2uM2UEb17hnJhdr7aHBIrGJJHBTRwyytAQaGylRKdNuxcRciebcsnMD_VkhxoV7tP7MOFV43qhm-lg5xWKh2iUUFB8oavsjSbXWK3t11fW1jnFqGVDmpMY7eoiqjcayInITHX4BWwabpESfCfHJeK2gVIa5tvlqFFC1auWnetOTj4WxWj46DT_uOxStcjH1swup5UZoLMnFpzYKqDtMAtIrCQcnx3DZP2Q7_VKy3YL1ZqwIbYjs5mhmj_Wy0)
+
+#### `w5300_transmitter`
+
+*to be finished*
+
+#### `w5300_recevier`
+
+*to be finished*
+
 ### Hardware
 
 There is few hardware suite used, including LEDs, keys, and W5300 itself. All pin allocation could be found in [here](./Top/w5300/post-creation-hooks/pins.tcl), and it's used to restore whole Quartus Prime project, see [here](#Usage).
