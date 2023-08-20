@@ -1,0 +1,18 @@
+@startuml w5300_socket_n_tcp_server_conf
+    [*] -> Initial
+    Initial --> InitTcpParams: enable && op_state
+    InitTcpParams -> WaitSockInit: op_cnt = 4
+    WaitSockInit -> Listen: rd_data[7:0] = 0x13
+    WaitSockInit --> SocketClose: timeout
+    Listen -> WaitListen: op_cnt = 3
+    WaitListen --> SocketClose: timeout
+    WaitListen --> Done: rd_data[7:0] = 0x14
+    SocketClose -> InitTcpParams
+
+    InitTcpParams: write socket_n registers
+    WaitSockInit: read socket_n SSR
+    Listen: write LISTEN command
+    WaitListen: read socket_n SSR
+    SocketClose: write CLOSE command
+    Done: indicate socket configuration finished(active high)
+@enduml

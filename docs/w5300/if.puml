@@ -1,0 +1,22 @@
+@startuml w5300_interface
+    [*] -> PowerOn
+    PowerOn --> ResetPhase1
+    ResetPhase1 -> ResetPhase2 :  wait for 2us
+    ResetPhase2 -> Idle : wait for 50us
+    Idle -> ReadWrite
+    ReadWrite --> Idle: wait for 70ns
+
+    ResetPhase1 --> PowerOn: system reset
+    ResetPhase2 --> PowerOn: system reset
+    Idle --> PowerOn: system reset
+    ReadWrite --> PowerOn: system reset
+
+    ResetPhase1: w_rst_n is active low
+    ResetPhase2: w_rst_n is high
+    Idle: cs_n is high
+    Idle: ctrl_op_state active high
+    ReadWrite: cs_n is active low
+    ReadWrite: addr/data setup
+    ReadWrite: rd_n, wr_n is on ctrl_addr[10]
+    ReadWrite: ctrl_op_state is low
+@enduml

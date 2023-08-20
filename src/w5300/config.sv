@@ -202,7 +202,7 @@ always_ff @(posedge clk, negedge rst_n) begin
     end
 end
 
-always_comb begin : BusLookUpTable
+always_comb begin : SocketRegisterLut
     case (state_c)
         InitTcpParams: begin
             case (op_cnt)

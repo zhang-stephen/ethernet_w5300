@@ -98,3 +98,5 @@ _info
 ## Editors
 /.vscode
 /out
+*.pdf
+*.html
