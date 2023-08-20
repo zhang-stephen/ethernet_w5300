@@ -124,6 +124,17 @@ testbench | submodule
 
 ![w5300 driver entry](https://cdn-0.plantuml.com/plantuml/png/RP51Qm8n48Nl_eev5mIXzB9G4UoXNcrlfOIGZ6vmCwcJsTM2FxxiH2MulIqpttilRtQLnRBqiOFJo_DYOJo70TaW2V_E002-dhvXFb_2Xe84s-di-gtpTQ9TsAzJZ8aQEDaWi4jSt80newYanbJtRiddrXwm0QTJunGnFX6gv4vKEH_97L0QO6-y5Gkli3YFIIgeaV9cts43MGUFzhei51-tQ7q3WSGGM2TXGEZIgSAMyCcMSWmYWVODeBH6peRnEE6BsyrvBD7XpRiD-rQfs-Q_RZvabuZG2Lmk825YwkLHjOGjEXpqCOnkcEvB-IGjyfYEpFsFG7AkvwnqtQWwLwbslrF9cI9yHPIfVYQFvJTlszaAoVUn-mC0)
 
+#### `defs.sv`
+w5300的寄存器地址和掩码都定义在[src/w5300/defs.sv](src/w5300/defs.sv)文件中，名为`W5300`的包里。
+
+要引用这些定义，只需在引用之前导入它们即可，例如：
+
+```verilog
+import W5300::*;
+```
+
+To cite these definitions, just use `import W5300::*` in the systemverilog source code before citing.
+
 #### `w5300_interface`
 
 显然，w5300的接口与SRAM是很相似的，是一种不带时钟的异步并行接口。
@@ -132,7 +143,7 @@ testbench | submodule
 
 ![w5300 interface](https://cdn-0.plantuml.com/plantuml/png/VP11R_8m38Rl_8ht_Eb3Aqne4eU9wqv3k-p0K1KHTuqKqifs5_7lLqALGJPnQ_m-jXzt8sfOXwD7N3rMLUs24ZVcG3C0sFtRO_wCRHU9NqCgJT-OZ_Kt4j9jQuGMARjwuoPUOWr4unHDnrWEKk3BC_vYFOrSnbRLnAKWpJFsdPqcj_mQewdvglUf2ZBxxVHponfo4gKZ-9oNEdV8B7GNoNRtkD9lzAzPj0vm0dDGzqNmNIpbRh3MVRRPQOs3_5rMzdNNrw96QHgTcUoQ-ilj9M6ivGThr418XxwCsTRXFo9VndJXilhSj5jK-u8kl9oaXGaAdH9uD5HqpNH5-cjeN73Ialq8iQLGZ8X6q0_UayNGZoYB-XDc6mfsEFfl)
 
-对于该接口而言，`ctrl_addr[10]`是一个扩展后的比特，用于指示当前地址应该被读取(0)或者写入(1)。这一点在其他子模块的寄存器查找表中可以看到。
+对于该接口而言，`ctrl_addr[10]`是一个地址扩展位，用于指示当前地址应该被读取(0)或者写入(1)。这一点在其他子模块的寄存器查找表中可以看到。
 
 #### `w5300_common_reg_conf`
 

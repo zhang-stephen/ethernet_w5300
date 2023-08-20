@@ -124,6 +124,16 @@ The FSM in top module of this driver is following:
 
 ![w5300 driver entry](https://cdn-0.plantuml.com/plantuml/png/RP51Qm8n48Nl_eev5mIXzB9G4UoXNcrlfOIGZ6vmCwcJsTM2FxxiH2MulIqpttilRtQLnRBqiOFJo_DYOJo70TaW2V_E002-dhvXFb_2Xe84s-di-gtpTQ9TsAzJZ8aQEDaWi4jSt80newYanbJtRiddrXwm0QTJunGnFX6gv4vKEH_97L0QO6-y5Gkli3YFIIgeaV9cts43MGUFzhei51-tQ7q3WSGGM2TXGEZIgSAMyCcMSWmYWVODeBH6peRnEE6BsyrvBD7XpRiD-rQfs-Q_RZvabuZG2Lmk825YwkLHjOGjEXpqCOnkcEvB-IGjyfYEpFsFG7AkvwnqtQWwLwbslrF9cI9yHPIfVYQFvJTlszaAoVUn-mC0)
 
+#### `defs.sv`
+
+All defintions of w5300 registers and bitmasks is defined in package `W5300` of [src/w5300/defs.sv](src/w5300/defs.sv).
+
+To cite these definitions, just import them before citing. For example:
+
+```verilog
+import W5300::*;
+```
+
 #### `w5300_interface`
 
 As well known, the physical interface of w5300 is SRAM-like async parallel interface, without clock.
