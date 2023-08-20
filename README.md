@@ -1,6 +1,7 @@
 # Wiznet W5300 Driver, Powered by SystemVerilog
 
 <p>
+<img src='https://img.shields.io/badge/Version-0.1.0-sea?style=flat-square'>
 <img src='https://img.shields.io/badge/License-MIT-informational?style=flat-square'>
 <img src=https://img.shields.io/badge/HDL-SystemVerilog-green.svg?style=flat-square>
 <img src=https://img.shields.io/badge/Tools-Python3-yellow.svg?logo=python&style=flat-square>
@@ -22,7 +23,7 @@ And this project is based on project [HDL on Git](https://hog.readthedocs.io/en/
 Clone this repo, change the cwd to root directory of it, and run this command(use git bash if on windows):
 
 ```bash
-./hog/CreateProject.sh w5300
+./Hog/CreateProject.sh w5300
 ```
 
 Then the Quartus Project File(.qpf) could be found in `Project/w5300/`.
@@ -51,13 +52,13 @@ The top module of w5300 driver is named as `w5300_driver_entry`, which is requir
 
 ```verilog
 module w5300_driver_entry #(
-    parameter logic [31:0] ip     = {8'd192, 8'd168, 8'd1, 8'd15},
-    parameter logic [15:0] port   = 16'd7000,
-    parameter logic [47:0] mac    = 48'h00_08_dc_01_02_03,
-    parameter logic [7: 0] subnet = 8'd24,
-    parameter int CLK_FREQ      = 8'd100,
-    parameter int ETH_TX_BUFFER_WIDTH = 16,
-    parameter int ETH_RX_BUFFER_WIDTH = 16
+    parameter logic [31:0] ip     = {8'd192, 8'd168, 8'd1, 8'd15},  // IPv4 of W5300
+    parameter logic [15:0] port   = 16'd7000,                       // port
+    parameter logic [47:0] mac    = 48'h00_08_dc_01_02_03,          // MAC address
+    parameter logic [7: 0] subnet = 8'd24,                          // length of Subnet mask
+    parameter int CLK_FREQ      = 8'd100,                           // clock frequency in MHz
+    parameter int ETH_TX_BUFFER_WIDTH = 16,                         // width of tx buffer address
+    parameter int ETH_RX_BUFFER_WIDTH = 16                          // width of rx buffer address
 )
 (
     input logic clk,            // driver clock, 100MHz is perferred
@@ -93,7 +94,7 @@ I think it's easy to transport the  driver, only the SystemVerilog source files,
 
 How to transport:
  - copy `src/w5300` to your project,
- - instantiete the driver `module w5300_driver_entry`,
+ - instantiate the driver `module w5300_driver_entry`,
  - create data buffers for Tx/Rx, e.g. use RAM IP core provided by vendor, and connect them to the driver instance.
 
 But there might be some exceptions, if you are using VHDL. I am not familiar with VHDL and cannot provide any help on it.
@@ -115,7 +116,7 @@ testbench | submodule
 
 ### Design
 
-**ALL figures could be found [docs](docs/).**
+**ALL figures could be found [docs/](docs/).**
 
 There are several submodules under the `w5300_driver_entry`, and let's walk through how they finite state machines(FSMs) are designed in this section.
 
@@ -127,9 +128,9 @@ The FSM in top module of this driver is following:
 
 As well known, the physical interface of w5300 is SRAM-like async parallel interface, without clock.
 
-Its FSM is following(system reset would be ignored in others):
+Its FSM is following(system reset would be omitted in others):
 
-![w5300 interface](https://cdn-0.plantuml.com/plantuml/png/VP11IyD048Nl-olUMGocbIBa8BrwidZnK4fOibEpa6naPcBmtvkOcauHSieottip7zcBUjQ-RJ3i7lEyZ4c9pxuYTxmx8Nl6eHk8NvExV96DipSIqaFjXJREl763jYY0mKV5kMDiUt6MZT6Nq12AQsINZvbfEE_nuPsZabjUo2ubqtdAaxXRXwjp0VaMfHOySNj-9JKTMC6BpKh6-XJpVmMBbWbHu2kDNuIc6wpGlrWTF-fVbpzIYG6BHR7CpLv3VGZy4Bnw26d_QH67CjrZuBdU9LJAJJaLZflyvFQKGjysxWS0)
+![w5300 interface](https://cdn-0.plantuml.com/plantuml/png/VP11R_8m38Rl_8ht_Eb3Aqne4eU9wqv3k-p0K1KHTuqKqifs5_7lLqALGJPnQ_m-jXzt8sfOXwD7N3rMLUs24ZVcG3C0sFtRO_wCRHU9NqCgJT-OZ_Kt4j9jQuGMARjwuoPUOWr4unHDnrWEKk3BC_vYFOrSnbRLnAKWpJFsdPqcj_mQewdvglUf2ZBxxVHponfo4gKZ-9oNEdV8B7GNoNRtkD9lzAzPj0vm0dDGzqNmNIpbRh3MVRRPQOs3_5rMzdNNrw96QHgTcUoQ-ilj9M6ivGThr418XxwCsTRXFo9VndJXilhSj5jK-u8kl9oaXGaAdH9uD5HqpNH5-cjeN73Ialq8iQLGZ8X6q0_UayNGZoYB-XDc6mfsEFfl)
 
 For the interface, the `ctrl_addr[10]` is an extended control bit, which is used to indicate this address should be read(0) or wroten(1). We would see its usage in the register look-up table of other submodules.
 
@@ -149,7 +150,7 @@ It's designed for initializing a socket as TCP server. And all registers with va
 
 #### `w5300_irq_handler`
 
-It's designed for read interrupt requests for IRQ handlers from IR and Sn_IR when `int_n` active low, and clear the interrupt requests.
+It's designed for read interrupt requests for IRQ handlers from IR and Sn_IR when `int_n` is pulled down, and clear the interrupt requests.
 
 There are several ports to indicate the interrupt status.
 
@@ -221,5 +222,6 @@ The LEDs will light up when the IOs were put high level.
 ### References
 
 1. [W5300 datasheet v1.3.4e](https://www.wiznet.io/wp-content/uploads/wiznethome/Chip/W5300/Documents/W5300_DS_V134E.pdf)
-2. [RFC 768: UDP Datagram Protocol](https://www.rfc-editor.org/rfc/rfc768)
-3. [Hog: HDL on git](https://hog.readthedocs.io/en/2023.1/index.html)
+2. [RFC 9293: Transmission Control Protocol](https://www.ietf.org/rfc/rfc9293.html)
+3. [RFC 768: UDP Datagram Protocol](https://www.rfc-editor.org/rfc/rfc768)
+4. [Hog: HDL on git](https://hog.readthedocs.io/en/2023.1/index.html)

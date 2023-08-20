@@ -19,4 +19,6 @@
     ReadWrite: addr/data setup
     ReadWrite: rd_n, wr_n is on ctrl_addr[10]
     ReadWrite: ctrl_op_state is low
+
+    note right of Idle: reset finished\nwhen ctrl_op_state was pulled up firstly 
 @enduml
