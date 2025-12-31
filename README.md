@@ -8,6 +8,11 @@
 <img src=https://img.shields.io/badge/Powered_by-Hog-orange.svg?style=flat-square>
 </p>
 
+> [!CAUTION]
+> Experiment project for Git-based VCS on RTL design. Not maintained due to lacking of necessary hardware and kits!
+> 
+> __DO NOT__ use it in production!
+
 ### Preface
 
 [W5300](https://www.wiznet.io/product-item/w5300/) is a TCP/IP controller, manufactured by [WizNet Inc.](https://wiznet.io/), which could be applied for Ethernet with TCP, UDP or PPPoE protocol based on IPv4.
